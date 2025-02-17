@@ -29,15 +29,14 @@ flowchart TD
 # Embedded in script headers
 requires-python = ">=3.12"  # Non-negotiable version
 dependencies = [
-    "loguru>=0.7.0",        # Structured logging
-    "litellm>=1.34.0",      # LLM abstraction layer
-    "pydantic>=2.5.3",      # Data validation
-    "anyio>=4.3.0",         # Async primitives
-    "pypandoc>=1.13",       # Document conversion
-    "typer>=0.9.0",         # CLI construction
-    "rich>=13.7.1",         # Console interface
-    "aiofiles>=23.2.1",     # Async file IO
-    "jinja2>=3.1.4"         # Templating engine
+    "loguru",               # Structured logging
+    "litellm",              # LLM abstraction layer
+    "pydantic>=2.0",        # Data validation
+    "anyio",                # Async primitives
+    "pypandoc",             # Document conversion
+    "typer",                # CLI construction
+    "rich",                 # Console interface
+    "aiofiles"              # Async file IO
 ]
 ```
 
@@ -50,6 +49,7 @@ dependencies = [
 | Mermaid CLI     | 10.2.4          | `mmdc --version`         |
 | Pandoc          | 3.1.12.1        | `pandoc --version`       |
 | LaTeX           | 2023.00         | `lualatex --version`     |
+| UV (Pip)        | Latest          | `uv --version`           |
 
 ## Precision Installation 🔧
 
@@ -85,43 +85,42 @@ echo "Pandoc capabilities: $(pandoc --list-output-formats)"
 
 ## Execution Workflows ⚙️
 
-### Core State Machine
-```mermaid
-stateDiagram-v2
-    [*] --> ValidateInputs
-    ValidateInputs --> GenerateTitle: valid
-    ValidateInputs --> [*]: invalid
-    GenerateTitle --> BuildOutline
-    BuildOutline --> ProcessChapters
-    ProcessChapters --> RenderDiagrams
-    RenderDiagrams --> ExportDocuments
-    ExportDocuments --> [*]
-    
-    state ProcessChapters {
-        [*] --> Chapter1
-        Chapter1 --> Chapter2
-        Chapter2 --> ChapterN
-    }
-```
-
 ### CLI Execution Protocol
 ```bash
 # Standard generation with safety checks
 generate_course \
   --subject "Advanced Systems Programming" \
-  --number_of_chapters 4 \
+  --number-of-chapters 4 \
   --level expert \
-  --words_by_chapter 2500 \
-  --model_name "anthropic/claude-3-opus" \
-  --target_directory ./sysprog-course \
+  --words-by-chapter 2500 \
+  --target-directory ./sysprog-course \
   --pdf-generation \
-  --epub-generation
+  --docx-generation \
+  --model-name "anthropic/claude-3-opus"
+
+# Interactive mode
+generate_course --interactive
 ```
+
+### CLI Options Detailed
+| Option               | Description                                      | Default   | Type    | Additional Notes |
+|----------------------|--------------------------------------------------|-----------|---------|-----------------|
+| `--subject`          | Course subject                                   | None      | TEXT    | Optional |
+| `--number-of-chapters`| Number of chapters                              | None      | INTEGER | Optional |
+| `--level`            | Difficulty level (beginner/intermediate/advanced)| None      | TEXT    | Optional |
+| `--words-by-chapter` | Number of words per chapter                      | None      | INTEGER | Optional |
+| `--target-directory` | Target directory for course output               | None      | TEXT    | Optional |
+| `--pdf-generation`   | Generate PDF version of the course               | Enabled   | Flag    | Use `--no-pdf-generation` to disable |
+| `--docx-generation`  | Generate DOCX version of the course              | Enabled   | Flag    | Use `--no-docx-generation` to disable |
+| `--epub-generation`  | Generate EPUB version of the course              | Disabled  | Flag    | Use `--epub-generation` to enable |
+| `--model-name`       | AI model to use for course generation            | None      | TEXT    | Optional |
+| `--interactive`, `-i`| Enable interactive mode                          | N/A       | Flag    | Shorthand `-i` available |
+| `--help`             | Show help message and exit                       | N/A       | Flag    | Displays all available options |
 
 ### Debug Mode Activation
 ```bash
 LOG_LEVEL=TRACE LITELLM_LOGLEVEL=DEBUG \
-generate_course --subject "Debug Course" --number_of_chapters 1
+generate_course --subject "Debug Course" --number-of-chapters 1
 ```
 
 ## Architecture Deep Dive 🏗️
@@ -159,7 +158,8 @@ sequenceDiagram
          'zenuml', 'flowchart', 'sequenceDiagram', 
          'classDiagram', 'stateDiagram', 'erDiagram',
          'gantt', 'journey', 'gitGraph', 'pie',
-         'mindmap', 'quadrantChart', 'xychart'
+         'mindmap', 'quadrantChart', 'xychart',
+         'block-beta', 'packet-beta'
      ]
      ```
    - Auto-scaling to 2x resolution (Retina-ready)
@@ -196,25 +196,10 @@ litellm-monitor
 ## Validation & Testing 🔍
 
 ### Sample Verification Suite
-```python
-# Test title generation
-async def test_title_generation():
-    request = CourseRequest(
-        subject="Rust Memory Safety",
-        level="advanced",
-        number_of_chapters=3
-    )
-    title = await generate_title(request)
-    assert "Rust" in title and "Memory" in title
-```
-
-### Load Testing Protocol
-```bash
-# Generate 5 concurrent courses
-for i in {1..5}; do
-    generate_course --subject "Test $i" --number_of_chapters 2 &
-done
-```
+- Comprehensive test coverage for each component
+- Async workflow simulation
+- Error injection and recovery testing
+- Performance benchmarking
 
 ## Troubleshooting Matrix 🛑
 
