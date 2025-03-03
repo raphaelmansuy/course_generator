@@ -11,6 +11,37 @@ An enterprise-grade solution for generating structured educational content with 
 -   **Asynchronous Execution**: Supports asynchronous execution of tasks for improved performance and responsiveness.
 -   **Error Handling**: Provides mechanisms for handling errors and retries, ensuring robust and reliable workflow execution.
 
+## 📦 Installation
+
+The AI Course Generator is available on PyPI and can be installed using pip or pipx.
+
+### Using pip
+
+```bash
+pip install ai-course-generator
+```
+
+### Using pipx (Recommended for CLI tools)
+
+[pipx](https://pypa.github.io/pipx/) installs the package in an isolated environment and makes the command available globally.
+
+```bash
+# Install pipx if you don't have it
+pip install pipx
+pipx ensurepath
+
+# Install ai-course-generator
+pipx install ai-course-generator
+```
+
+### Verify Installation
+
+After installation, verify that the tool is correctly installed by checking the version:
+
+```bash
+ai-course-generator --help
+```
+
 ## 🛠️ Development Overview
 
 This course generator is developed using a modular architecture, with each component responsible for a specific aspect of the course creation process. The main components include:
@@ -113,7 +144,7 @@ echo "Pandoc capabilities: $(pandoc --list-output-formats)"
 
 ```bash
 # Standard generation with safety checks
-generate_course \
+ai-course-generator \
   --subject "Advanced Systems Programming" \
   --number-of-chapters 4 \
   --level expert \
@@ -124,10 +155,30 @@ generate_course \
   --model-name "anthropic/claude-3-opus"
 
 # Interactive mode
-generate_course --interactive
+ai-course-generator --interactive
 ```
 
 ### 🎛️ CLI Options Detailed
+
+```
+Usage: ai-course-generator [OPTIONS]                                                                                                     
+                                                                                                                                          
+ Generate a course plan based on parameters                                                                                               
+                                                                                                                                          
+╭─ Options ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ --subject                                         TEXT     Course subject [default: None]                                              │
+│ --number-of-chapters                              INTEGER  Number of chapters [default: None]                                          │
+│ --level                                           TEXT     Difficulty level (beginner/intermediate/advanced) [default: None]           │
+│ --words-by-chapter                                INTEGER  Number of words per chapter [default: None]                                 │
+│ --target-directory                                TEXT     Target directory for course output [default: None]                          │
+│ --pdf-generation          --no-pdf-generation              Generate PDF version of the course [default: pdf-generation]                │
+│ --docx-generation         --no-docx-generation             Generate DOCX version of the course [default: docx-generation]              │
+│ --epub-generation         --no-epub-generation             Generate EPUB version of the course [default: no-epub-generation]           │
+│ --model-name                                      TEXT     AI model to use for course generation [default: None]                       │
+│ --interactive         -i                                   Enable interactive mode                                                     │
+│ --help                                                     Show this message and exit.                                                 │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+```
 
 | Option               | Description                                      | Default   | Type    | Additional Notes |
 |----------------------|--------------------------------------------------|-----------|---------|-----------------|
@@ -147,7 +198,7 @@ generate_course --interactive
 
 ```bash
 LOG_LEVEL=TRACE LITELLM_LOGLEVEL=DEBUG \
-generate_course --subject "Debug Course" --number-of-chapters 1
+ai-course-generator --subject "Debug Course" --number-of-chapters 1
 ```
 
 ## 🏛️ Architecture Deep Dive
