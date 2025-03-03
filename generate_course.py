@@ -9,7 +9,8 @@
 #     "pypandoc",
 #     "typer",
 #     "rich",
-#     "aiofiles"
+#     "aiofiles",
+#     "quantalogic"
 # ]
 # ///
 
