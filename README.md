@@ -4,7 +4,7 @@ An enterprise-grade solution for generating structured educational content with 
 
 ## 💡 About QuantaLogic Flow
 
-QuantaLogic Flow is a versatile Python library designed to simplify the creation and execution of complex workflows. It provides a declarative way to define a series of interconnected tasks (nodes), manage the flow of data between them, and handle error conditions gracefully. Key features include:
+[QuantaLogic Flow](https://github.com/quantalogic/quantalogic) is a versatile Python library designed to simplify the creation and execution of complex workflows. It provides a declarative way to define a series of interconnected tasks (nodes), manage the flow of data between them, and handle error conditions gracefully. Key features include:
 
 -   **Node-based Architecture**: Workflows are built from individual nodes, each representing a specific task or operation.
 -   **Declarative Definition**: Workflows are defined in a clear and concise manner, making them easy to understand and maintain.
