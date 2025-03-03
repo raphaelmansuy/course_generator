@@ -44,7 +44,7 @@ import aiofiles
 from loguru import logger
 from pydantic import BaseModel
 import pypandoc
-from quantalogic.flow.flow import Workflow, Nodes
+from quantalogic.flow.flow import Workflow, Nodes, WorkflowEvent, WorkflowEventType
 from litellm import acompletion
 from jinja2 import Environment, FileSystemLoader
 
@@ -101,6 +101,24 @@ async def load_template(prompt_file: str, context: Dict[str, Any]) -> str:
     env = Environment(loader=FileSystemLoader("prompts"))
     template = env.get_template(prompt_file)
     return template.render(**context)
+
+# Observer for streaming title, outline, and chapters
+async def content_stream_observer(event: WorkflowEvent):
+    """Observer to stream title, outline, and chapter content as they are generated."""
+    if event.event_type == WorkflowEventType.NODE_COMPLETED and event.result is not None:
+        if event.node_name == "generate_title":
+            print("\n=== Course Title Generated ===\n")
+            print(event.result)
+            print("\n" + "="*30 + "\n")
+        elif event.node_name == "generate_outline":
+            print("\n=== Course Outline Generated ===\n")
+            print(event.result)
+            print("\n" + "="*30 + "\n")
+        elif event.node_name == "generate_chapter":
+            chapter_num = event.context["completed_chapters"] + 1
+            print(f"\n=== Chapter {chapter_num} Generated ===\n")
+            print(event.result)
+            print("\n" + "="*30 + "\n")
 
 # Node definitions
 @Nodes.define(output="validation_result")
@@ -439,6 +457,9 @@ async def create_workflow(request: CourseRequest) -> Workflow:
     workflow.then("compile_course", condition=lambda ctx: ctx["loop_status"] == "complete")
     workflow.then("save_full_course")
     workflow.then("end")
+    
+    # Add the content streaming observer
+    workflow.add_observer(content_stream_observer)
     
     # Inject system_prompt into initial context
     workflow.context = {"system_prompt": system_prompt}
