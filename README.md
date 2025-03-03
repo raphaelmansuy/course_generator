@@ -31,7 +31,7 @@ This course generator is developed using a modular architecture, with each compo
 
 ```mermaid
 flowchart TD
-    A[CLI Interface] --> B{qflow Engine}
+    A[CLI Interface] --> B{Quantalogic Flow Engine}
     B --> C[Validation Node]
     C --> D[Title Generator]
     D --> E[Outline Builder]
