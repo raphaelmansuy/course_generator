@@ -356,9 +356,7 @@ uv pip freeze --all | cyclonedx-py format
 
 This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
 
-## Copyright
-
-The copyright of the prompts used to generate the content of this project is reserved to Raphaël MANSUY.
+**The copyright of the prompts used to generate the content of this project is reserved to Raphaël MANSUY.  This copyright is not covered by the Apache 2.0 License.**
 
 ---
 
