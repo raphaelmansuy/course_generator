@@ -1,9 +1,10 @@
 [tool.poetry]
 name = "ai-course-generator"
 version = "0.2.0"
-description = ""
+description = "An AI-powered course generation tool that creates comprehensive educational content using advanced language models"
 authors = ["Raphaël MANSUY <raphael.mansuy@gmail.com>"]
 readme = "README.md"
+packages = [{include = "ai_course_generator"}]
 
 [tool.poetry.dependencies]
 python = "^3.12"
@@ -17,9 +18,35 @@ typer = "^0.15.2"
 rich = "^13.9.4"
 jinja2 = "^3.1.5"
 instructor = "^1.7.2"
+aiofiles = "^23.2.1"
 
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0.0"
+mypy = "^1.8.0"
+black = "^24.1.1"
+isort = "^5.13.2"
+ruff = "^0.2.1"
 
+[tool.poetry.group.docs.dependencies]
+mkdocs = "^1.5.3"
+mkdocstrings = "^0.24.0"
+
+[tool.poetry.scripts]
+generate_course = "ai_course_generator.generate_course:app"
+ai-course-generator = "ai_course_generator.generate_course:app"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 120
+target-version = ['py312']
+
+[tool.isort]
+profile = "black"
+line_length = 120
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"

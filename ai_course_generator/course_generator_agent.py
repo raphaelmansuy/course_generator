@@ -391,7 +391,7 @@ async def save_full_course(
     markdown_path = (output_dir / f"{clean_filename}.md").resolve()
     
     # Process Mermaid diagrams
-    from mermaid_processor import MermaidProcessor
+    from ai_course_generator.mermaid_processor import MermaidProcessor
     mermaid_processor = MermaidProcessor(target_directory=target_directory, filename_prefix=clean_filename)
     processed_content = mermaid_processor.process_content(full_course)
     

@@ -18,7 +18,7 @@ import typer
 import anyio
 from rich.console import Console
 from rich.prompt import Prompt
-from course_generator_agent import CourseRequest, generate_course
+from ai_course_generator.course_generator_agent import CourseRequest, generate_course
 
 app = typer.Typer(add_completion=False)
 console = Console()
@@ -107,5 +107,9 @@ def generate(
     
     console.print(f"[bold green]\nGenerated Course Plan at: {result}[/bold green]")
 
-if __name__ == "__main__":
+def main():
+    """Entry point for Poetry script"""
     app()
+
+if __name__ == "__main__":
+    main()
