@@ -300,3 +300,7 @@ uv pip freeze --all | cyclonedx-py format
 *   All AI interactions use TLS 1.3+
 *   Local file operations use strict umask (077)
 *   Temporary file wiping with DoD 5220.22-M standard
+
+---
+
+If you find this project helpful, please consider giving the [QuantaLogic Flow library](https://github.com/quantalogic/quantalogic) a star! ⭐
