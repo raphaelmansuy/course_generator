@@ -12,7 +12,8 @@
 #     "aiofiles",
 #     "jinja2>=3.1.0",
 #     "instructor",
-#     "quantalogic"
+#     "quantalogic",
+#     "mermaid_processor"
 # ]
 # ///
 
@@ -37,7 +38,7 @@ import os
 import asyncio
 import shutil
 from pathlib import Path
-from typing import Dict, List, Optional,Any
+from typing import Dict, List, Optional, Any
 import anyio
 import aiofiles
 from loguru import logger
@@ -371,19 +372,25 @@ async def save_full_course(
     clean_filename = clean_title_for_filename(title)
     markdown_path = (output_dir / f"{clean_filename}.md").resolve()
     
+    # Process Mermaid diagrams
+    from mermaid_processor import MermaidProcessor
+    mermaid_processor = MermaidProcessor(target_directory=target_directory, filename_prefix=clean_filename)
+    processed_content = mermaid_processor.process_content(full_course)
+    
+    # Save processed markdown
     async with aiofiles.open(markdown_path, "w", encoding="utf-8") as f:
-        await f.write(full_course)
+        await f.write(processed_content)
     
     generated_files = {"md": str(markdown_path)}
     if pdf_generation:
         pdf_path = (output_dir / f"{clean_filename}.pdf").resolve()
-        generated_files["pdf"] = await generate_pdf(full_course, pdf_path)
+        generated_files["pdf"] = await generate_pdf(processed_content, pdf_path)
     if docx_generation:
         docx_path = (output_dir / f"{clean_filename}.docx").resolve()
-        generated_files["docx"] = await generate_docx(full_course, docx_path)
+        generated_files["docx"] = await generate_docx(processed_content, docx_path)
     if epub_generation:
         epub_path = (output_dir / f"{clean_filename}.epub").resolve()
-        generated_files["epub"] = await generate_epub(full_course, epub_path)
+        generated_files["epub"] = await generate_epub(processed_content, epub_path)
     
     return generated_files
 
