@@ -1,12 +1,23 @@
 [tool.poetry]
-name = "stce-course-generator"
-version = "0.1.0"
+name = "ai-course-generator"
+version = "0.2.0"
 description = ""
 authors = ["Raphaël MANSUY <raphael.mansuy@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.12"
+quantalogic = "^0.53.0"
+loguru = "^0.7.3"
+litellm = "^1.61.20"
+pydantic = "^2.10.6"
+anyio = "^4.8.0"
+pypandoc = "^1.15"
+typer = "^0.15.2"
+rich = "^13.9.4"
+jinja2 = "^3.1.5"
+instructor = "^1.7.2"
+
 
 
 [build-system]
