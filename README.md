@@ -352,6 +352,14 @@ uv pip freeze --all | cyclonedx-py format
 *   Local file operations use strict umask (077)
 *   Temporary file wiping with DoD 5220.22-M standard
 
+## License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+
+## Copyright
+
+The copyright of the prompts used to generate the content of this project is reserved to Raphaël MANSUY.
+
 ---
 
 If you find this project helpful, please consider giving the [QuantaLogic Flow library](https://github.com/quantalogic/quantalogic) a star! ⭐
