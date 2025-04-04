@@ -28,8 +28,8 @@ An intelligent CLI tool for generating structured educational content using AI m
 ## Quick Start
 
 ```bash
-# Run in interactive mode (recommended for first-time users)
-python -m ai_course_generator.generate_course generate --interactive
+# Run the course generator directly
+python ai_course_generator/generate_course.py
 ```
 
 ## Installation Options
@@ -50,13 +50,15 @@ pipx install git+https://github.com/raphaelmansuy/course-generator.git
 
 ### Interactive Mode
 ```bash
-python -m ai_course_generator.generate_course generate -i
+python ai_course_generator/generate_course.py --interactive
+# or
+python ai_course_generator/generate_course.py -i
 ```
 The interactive mode will guide you through all configuration options with sensible defaults.
 
 ### Direct Command Usage
 ```bash
-python -m ai_course_generator.generate_course generate \
+python ai_course_generator/generate_course.py \
   --subject "Data Science" \
   --level intermediate \
   --words-by-chapter 1200 \
@@ -78,7 +80,7 @@ python -m ai_course_generator.generate_course generate \
 
 **1. Beginner-Friendly Course**
 ```bash
-python -m ai_course_generator.generate_course generate \
+python ai_course_generator/generate_course.py \
   --subject "Python Basics" \
   --level beginner \
   --words-by-chapter 600
@@ -86,7 +88,7 @@ python -m ai_course_generator.generate_course generate \
 
 **2. Technical Deep Dive**
 ```bash
-python -m ai_course_generator.generate_course generate \
+python ai_course_generator/generate_course.py \
   --subject "Advanced Kubernetes" \
   --level advanced \
   --words-by-chapter 2000 \
