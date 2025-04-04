@@ -8,7 +8,8 @@
 #     "anyio",
 #     "quantalogic>=0.35",
 #     "jinja2",
-#     "typer>=0.9.0"
+#     "typer>=0.9.0",
+#     "rich"
 # ]
 # ///
 
@@ -22,6 +23,11 @@ import typer
 from loguru import logger
 from pydantic import BaseModel, Field
 from quantalogic.flow.flow import Nodes, Workflow, WorkflowEvent
+from rich.console import Console
+from rich.progress import Progress, TaskID
+
+# Initialize Rich console for colored output
+console = Console()
 
 # === Pydantic Models ===
 class MCQRequest(BaseModel):
@@ -34,6 +40,10 @@ class MCQRequest(BaseModel):
     output_formats: List[str] = Field(default=["json"], description="Formats to save the MCQs (e.g., json, csv, md)")
     model_name: str = Field("gemini/gemini-2.0-flash", description="LLM model to use")
     batch_size: int = Field(5, description="Batch size (currently unused, set for future optimization)")
+
+class KeyConcepts(BaseModel):
+    """Model for key concepts extracted from a topic."""
+    concepts: List[str] = Field(..., description="List of key concepts related to the topic")
 
 class QuestionWithAnswer(BaseModel):
     """Intermediate model for a question and its correct answer."""
@@ -50,6 +60,7 @@ class MCQItem(BaseModel):
     options: List[str]
     correct_answer: int  # 1-based index
     explanation: str = ""  # Populated with detailed explanation
+    key_concept: str = Field("", description="The key concept this question relates to")
 
 class Explanation(BaseModel):
     """Model for the explanation of an MCQ item."""
@@ -70,20 +81,43 @@ async def validate_input(request: MCQRequest) -> MCQRequest:
         raise ValueError("At least one output format must be specified")
     return request
 
+@Nodes.structured_llm_node(
+    system_prompt="You are an AI assistant tasked with identifying key concepts for educational content.",
+    output="key_concepts",
+    response_model=KeyConcepts,
+    prompt_template="""
+Given the topic '{{ topic }}', identify 5-10 key concepts that are essential for understanding it at the {{ difficulty }} level. Provide only the list of concepts, no explanations.
+""",
+    max_tokens=500
+)
+async def extract_key_concepts(topic: str, difficulty: str, model: str) -> KeyConcepts:
+    """Extract key concepts from the topic using an LLM."""
+    pass  # Implementation handled by the decorator
+
 @Nodes.define(output=None)
-async def initialize_mcq_generation(request: MCQRequest) -> dict:
-    """Initialize the context for MCQ generation."""
+async def initialize_mcq_generation(request: MCQRequest, key_concepts: KeyConcepts) -> dict:
+    """Initialize the context for MCQ generation with key concepts."""
     logger.info("Initializing MCQ generation")
+    num_questions = request.num_questions
+    concepts = key_concepts.concepts
+    # Distribute questions evenly across concepts, remainder goes to earlier concepts
+    questions_per_concept = [num_questions // len(concepts)] * len(concepts)
+    for i in range(num_questions % len(concepts)):
+        questions_per_concept[i] += 1
     return {
         "topic": request.topic,
         "difficulty": request.difficulty,
-        "num_questions": request.num_questions,
+        "num_questions": num_questions,
         "num_options": request.num_options,
         "model": request.model_name,
         "current_index": 0,
         "mcq_items": [],
         "output_formats": request.output_formats,
-        "target_directory": request.target_directory
+        "target_directory": request.target_directory,
+        "key_concepts": concepts,
+        "questions_per_concept": questions_per_concept,
+        "current_concept_index": 0,
+        "progress_task": None  # Placeholder for progress bar task ID
     }
 
 @Nodes.structured_llm_node(
@@ -91,12 +125,12 @@ async def initialize_mcq_generation(request: MCQRequest) -> dict:
     output="question_with_answer",
     response_model=QuestionWithAnswer,
     prompt_template="""
-Generate a multiple-choice question on the topic '{{ topic }}' at the {{ difficulty }} level. Provide the question and the correct answer.
+Generate a multiple-choice question on the specific concept '{{ current_concept }}' within the topic '{{ topic }}' at the {{ difficulty }} level. Provide the question and the correct answer.
 """,
     max_tokens=1000
 )
-async def generate_question(topic: str, difficulty: str, model: str) -> QuestionWithAnswer:
-    """Generate a question and its correct answer using an LLM."""
+async def generate_question(topic: str, difficulty: str, model: str, current_concept: str) -> QuestionWithAnswer:
+    """Generate a question and its correct answer for a specific concept using an LLM."""
     pass  # Implementation handled by the decorator
 
 @Nodes.structured_llm_node(
@@ -113,8 +147,8 @@ async def generate_distractors(question: str, correct_answer: str, num_distracto
     pass  # Implementation handled by the decorator
 
 @Nodes.define(output="mcq_item")
-async def create_mcq_item(question_with_answer: QuestionWithAnswer, distractors: Distractors) -> MCQItem:
-    """Create an MCQ item by combining the question, correct answer, and distractors."""
+async def create_mcq_item(question_with_answer: QuestionWithAnswer, distractors: Distractors, current_concept: str) -> MCQItem:
+    """Create an MCQ item by combining the question, correct answer, distractors, and key concept."""
     logger.debug(f"Creating MCQ item for question: {question_with_answer.question}")
     options = [question_with_answer.correct_answer] + distractors.distractors
     random.shuffle(options)
@@ -122,7 +156,8 @@ async def create_mcq_item(question_with_answer: QuestionWithAnswer, distractors:
     return MCQItem(
         question=question_with_answer.question,
         options=options,
-        correct_answer=correct_index
+        correct_answer=correct_index,
+        key_concept=current_concept
     )
 
 @Nodes.define(output="mcq_item")
@@ -180,8 +215,7 @@ The correct answer is option {correct_letter}, which is '{correct_option}'.
 Provide a detailed explanation (at least 100 words) for why this is the correct answer and why each of the other options is incorrect. Use the actual option letters (e.g., A, B, C) and their text in your explanation. Do not include placeholders like '{{correct_letter}}' or '{{explanation}}' in your response—use the provided values directly.
 """
     logger.debug(f"Rendered prompt for explanation generation:\n{rendered_prompt}")
-    # The actual LLM call is handled by the decorator
-    pass
+    pass  # Implementation handled by the decorator
 
 @Nodes.define(output="mcq_item")
 async def set_explanation(mcq_item: MCQItem, explanation: Explanation) -> MCQItem:
@@ -227,7 +261,8 @@ def create_mcq_workflow() -> Workflow:
     wf = Workflow("validate_input")
     
     # Define the sequence of nodes
-    wf.node("validate_input").then("initialize_mcq_generation")
+    wf.node("validate_input").then("extract_key_concepts")
+    wf.node("extract_key_concepts").then("initialize_mcq_generation")
     wf.node("initialize_mcq_generation").then("generate_question")
     wf.node("generate_question").then("generate_distractors")
     wf.node("generate_distractors").then("create_mcq_item")
@@ -239,19 +274,37 @@ def create_mcq_workflow() -> Workflow:
     wf.node("append_mcq_item").then("increment_index")
     wf.node("increment_index").then("save_mcqs")
     
-    # Define the loop transition
+    # Define the loop transition with concept switching
     wf.transitions["increment_index"] = [
-        ("generate_question", lambda ctx: ctx["current_index"] < ctx["num_questions"]),
+        ("generate_question", lambda ctx: (
+            ctx["current_index"] < ctx["num_questions"] and
+            sum(ctx["questions_per_concept"][:ctx["current_concept_index"] + 1]) > ctx["current_index"]
+        )),
+        ("generate_question", lambda ctx: (
+            ctx["current_index"] < ctx["num_questions"] and
+            sum(ctx["questions_per_concept"][:ctx["current_concept_index"] + 1]) <= ctx["current_index"] and
+            ctx["current_concept_index"] + 1 < len(ctx["key_concepts"]) and
+            (ctx.__setitem__("current_concept_index", ctx["current_concept_index"] + 1) or True)
+        )),
         ("save_mcqs", lambda ctx: ctx["current_index"] >= ctx["num_questions"])
     ]
     
     # Input mappings for each node
     wf.node_input_mappings["validate_input"] = {"request": "request"}
-    wf.node_input_mappings["initialize_mcq_generation"] = {"request": "request"}
+    wf.node_input_mappings["extract_key_concepts"] = {
+        "topic": lambda ctx: ctx["request"].topic,
+        "difficulty": lambda ctx: ctx["request"].difficulty,
+        "model": lambda ctx: ctx["request"].model_name
+    }
+    wf.node_input_mappings["initialize_mcq_generation"] = {
+        "request": "request",
+        "key_concepts": "key_concepts"
+    }
     wf.node_input_mappings["generate_question"] = {
         "topic": "topic",
         "difficulty": "difficulty",
-        "model": "model"
+        "model": "model",
+        "current_concept": lambda ctx: ctx["key_concepts"][ctx["current_concept_index"]]
     }
     wf.node_input_mappings["generate_distractors"] = {
         "question": lambda ctx: ctx["question_with_answer"].question,
@@ -262,7 +315,8 @@ def create_mcq_workflow() -> Workflow:
     }
     wf.node_input_mappings["create_mcq_item"] = {
         "question_with_answer": "question_with_answer",
-        "distractors": "distractors"
+        "distractors": "distractors",
+        "current_concept": lambda ctx: ctx["key_concepts"][ctx["current_concept_index"]]
     }
     wf.node_input_mappings["validate_mcq_item"] = {"mcq_item": "mcq_item"}
     wf.node_input_mappings["prepare_explanation_inputs"] = {"mcq_item": "mcq_item"}
@@ -294,17 +348,29 @@ def create_mcq_workflow() -> Workflow:
 
 # === Observer for Progress Tracking ===
 async def mcq_stream_observer(event: WorkflowEvent):
-    """Observer to track and display workflow progress."""
-    if event.node_name == "generate_question":
-        index = event.context.get("current_index", 0)
-        total = event.context.get("num_questions", 0)
-        print(f"Generating question {index + 1}/{total}")
+    """Observer to track and display workflow progress with a progress bar and colored output."""
+    total = event.context.get("num_questions", 0)
+    index = event.context.get("current_index", 0)
+    
+    if event.node_name == "initialize_mcq_generation":
+        # Initialize progress bar when workflow starts
+        with Progress() as progress:
+            task = progress.add_task("[yellow]Generating MCQs", total=total)
+            event.context["progress"] = progress  # Store progress object
+            event.context["progress_task"] = task  # Store task ID
+    
+    elif event.node_name == "generate_question":
+        concept = event.context["key_concepts"][event.context["current_concept_index"]]
+        progress = event.context.get("progress")
+        task = event.context.get("progress_task")
+        if progress and task:
+            progress.update(task, completed=index + 1, description=f"[yellow]Generating for '{concept}'")
+    
     elif event.node_name == "generate_explanation":
-        index = event.context.get("current_index", 0)
-        total = event.context.get("num_questions", 0)
-        print(f"Generating explanation for question {index + 1}/{total}")
+        console.print(f"[cyan]Generating explanation for question {index + 1}/{total}")
+    
     elif event.node_name == "save_mcqs":
-        print(f"Saving MCQs to {event.context['target_directory']}")
+        console.print(f"[green]Saving MCQs to {event.context['target_directory']}")
 
 # === Workflow Execution ===
 async def generate_mcqs(request: MCQRequest):
@@ -316,6 +382,7 @@ async def generate_mcqs(request: MCQRequest):
     initial_context = {"request": request}
     result = await engine.run(initial_context)
     logger.info("MCQ generation completed")
+    console.print(f"[green]MCQs successfully generated and saved to {request.target_directory}")
     return result
 
 # === Typer CLI Integration ===
@@ -340,7 +407,7 @@ def generate(
         interactive = topic is None or difficulty is None or num_questions is None
 
         if interactive:
-            typer.echo("Entering interactive mode...")
+            console.print("[bold cyan]Entering interactive mode...[/bold cyan]")
             topic = typer.prompt("Enter the topic for the MCQs")
             difficulty = typer.prompt(
                 "Enter the difficulty level (beginner, intermediate, advanced)",
@@ -349,7 +416,7 @@ def generate(
                 show_default=True
             ).lower()
             while difficulty not in ["beginner", "intermediate", "advanced"]:
-                typer.echo("Invalid difficulty level. Please choose: beginner, intermediate, advanced")
+                console.print("[red]Invalid difficulty level. Please choose: beginner, intermediate, advanced[/red]")
                 difficulty = typer.prompt("Enter the difficulty level").lower()
             num_questions = typer.prompt(
                 "Enter the number of questions to generate",
@@ -400,11 +467,10 @@ def generate(
 
         # Run the workflow
         asyncio.run(generate_mcqs(request))
-        typer.echo(f"MCQs successfully generated and saved to {target_directory}")
 
     except Exception as e:
         logger.error(f"Failed to generate MCQs: {str(e)}")
-        typer.echo(f"Error: {str(e)}")
+        console.print(f"[red]Error: {str(e)}[/red]")
         raise typer.Exit(code=1)
 
 if __name__ == "__main__":
