@@ -3,106 +3,453 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MCQ Practice</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <title>LingLearn Quiz</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     :root {
-      --primary: #10b981; /* Green, Duolingo-inspired */
-      --secondary: #ef4444; /* Red for errors */
-      --bg-light: #f9fafb; /* Light background */
-      --text-dark: #1f2937; /* Dark text */
+      --primary: #58cc02; /* Duolingo green */
+      --primary-hover: #46a302;
+      --secondary: #ff4b4b; /* Red for errors */
+      --secondary-hover: #ea3a3a;
+      --bg-light: #fff; /* Light background */
+      --text-dark: #3c3c3c; /* Dark text */
+      --accent: #1cb0f6; /* Blue accent */
+      --accent-light: #e5f8ff;
+      --border-light: #e5e5e5;
+      --crown-gold: #ffc800;
     }
+    
+    * {
+      box-sizing: border-box;
+    }
+    
     body {
       background-color: var(--bg-light);
-      font-family: 'Inter', sans-serif;
+      font-family: 'Nunito', sans-serif;
+      color: var(--text-dark);
+      line-height: 1.5;
+      margin: 0;
+      padding: 0;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+    
+    .option-label {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      padding: 16px;
+      border: 2px solid var(--border-light);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-weight: 600;
+      position: relative;
+      box-shadow: 0 2px 0 var(--border-light);
+    }
+    
+    .option-label:hover {
+      border-color: var(--accent);
+      background-color: var(--accent-light);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 0 var(--border-light);
+    }
+    
+    .option-marker {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      background-color: #f0f0f0;
+      border-radius: 50%;
+      margin-right: 12px;
+      flex-shrink: 0;
+      font-weight: 700;
+    }
+    
+    input[type="radio"]:checked + .option-label {
+      border-color: var(--accent);
+      background-color: var(--accent-light);
+    }
+    
+    input[type="radio"]:checked + .option-label .option-marker {
+      background-color: var(--accent);
+      color: white;
+    }
+    
+    .progress-bar-container {
+      height: 16px;
+      background-color: #e5e5e5;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+    
+    .progress-bar {
+      height: 100%;
+      background-color: var(--primary);
+      transition: width 0.5s ease;
+      border-radius: 8px;
+    }
+    
+    /* Buttons */
+    .btn {
+      font-weight: 700;
+      padding: 12px 24px;
+      border-radius: 12px;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .btn:active {
+      transform: translateY(4px);
+      box-shadow: none;
+    }
+    
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+    }
+    
+    .btn-primary:hover:not(:disabled) {
+      background-color: var(--primary-hover);
+    }
+    
+    .btn-secondary {
+      background-color: #e5e5e5;
       color: var(--text-dark);
     }
-    .option-label {
-      display: block;
-      width: 100%;
-      padding: 0.75rem 1rem;
-      border: 1px solid #d1d5db;
-      border-radius: 0.375rem;
-      cursor: pointer;
+    
+    .btn-secondary:hover:not(:disabled) {
+      background-color: #d5d5d5;
     }
-    .option-label:hover {
-      background-color: #f3f4f6;
+    
+    .btn-text {
+      background: none;
+      color: var(--accent);
+      box-shadow: none;
+      padding: 8px 12px;
+      font-size: 14px;
+      text-transform: none;
     }
-    input[type="radio"]:checked + .option-label {
-      border-color: var(--primary);
-      background-color: #ecfdf5;
+    
+    .btn-text:hover {
+      text-decoration: underline;
+      background-color: transparent;
     }
-    .progress-bar {
-      height: 6px;
-      transition: width 0.3s ease;
+    
+    .btn-text:active {
+      transform: none;
     }
+    
+    .btn-accent {
+      background-color: var(--accent);
+      color: white;
+    }
+    
+    .btn-accent:hover:not(:disabled) {
+      background-color: #0a9ed9;
+    }
+    
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
     /* Animations */
     .fade-in {
       animation: fadeIn 0.3s ease-in;
     }
+    
     @keyframes fadeIn {
       from { opacity: 0; }
       to { opacity: 1; }
     }
-    .animate-feedback {
-      animation: feedbackFade 0.3s ease-in;
+    
+    .slide-up {
+      animation: slideUp 0.4s ease-out;
     }
-    @keyframes feedbackFade {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
+    
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
     }
+    
+    .bounce {
+      animation: bounce 0.6s ease-in-out;
+    }
+    
+    @keyframes bounce {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+    
+    /* Feedback animations */
+    .feedback-correct {
+      animation: correctFeedback 0.3s ease-in;
+      border-color: var(--primary) !important;
+      background-color: #e6f9e0 !important;
+    }
+    
+    .feedback-incorrect {
+      animation: incorrectFeedback 0.3s ease-in;
+      border-color: var(--secondary) !important;
+      background-color: #ffe9e9 !important;
+    }
+    
+    @keyframes correctFeedback {
+      0% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      50% { transform: translateX(5px); }
+      75% { transform: translateX(-5px); }
+      100% { transform: translateX(0); }
+    }
+    
+    @keyframes incorrectFeedback {
+      0% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      50% { transform: translateX(5px); }
+      75% { transform: translateX(-5px); }
+      100% { transform: translateX(0); }
+    }
+    
+    /* Card Design */
+    .card {
+      background-color: white;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    
+    /* Results */
+    .results-icon {
+      font-size: 60px;
+      margin-bottom: 16px;
+    }
+    
+    .question-review {
+      border-left: 4px solid var(--border-light);
+      padding-left: 16px;
+      margin-bottom: 16px;
+    }
+    
+    .question-review.correct {
+      border-left-color: var(--primary);
+    }
+    
+    .question-review.incorrect {
+      border-left-color: var(--secondary);
+    }
+    
     /* Responsive adjustments */
     @media (max-width: 640px) {
       h1 {
         font-size: 1.5rem;
       }
+      
       .text-lg, .text-xl {
         font-size: 1rem;
       }
-      button {
-        padding: 0.75rem 1rem;
+      
+      .btn {
+        padding: 10px 16px;
+        font-size: 14px;
       }
+      
+      .option-label {
+        padding: 12px;
+      }
+      
+      .option-marker {
+        width: 24px;
+        height: 24px;
+        margin-right: 8px;
+      }
+      
+      .card {
+        padding: 16px;
+      }
+    }
+    
+    /* Health bar and points (Duolingo-style) */
+    .game-stats {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    
+    .hearts {
+      display: flex;
+      align-items: center;
+    }
+    
+    .heart {
+      color: var(--secondary);
+      font-size: 20px;
+      margin-right: 4px;
+    }
+    
+    .points {
+      display: flex;
+      align-items: center;
+      font-weight: 700;
+      color: var(--crown-gold);
+    }
+    
+    /* Confetti effect */
+    .confetti {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background-color: #f00;
+      opacity: 0;
+    }
+    
+    /* Modal */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+    
+    .modal-content {
+      background-color: white;
+      padding: 24px;
+      border-radius: 12px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    
+    .close-button {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--text-dark);
     }
   </style>
 </head>
-<body class="bg-gray-50">
+<body>
+  <!-- Header with logo -->
+  <header class="bg-[var(--primary)] py-4">
+    <div class="container flex justify-center items-center">
+      <h1 class="text-white font-bold text-2xl flex items-center">
+        <span class="mr-2">🦉</span> LingLearn
+      </h1>
+    </div>
+  </header>
+  
   <!-- JSON Input Page -->
   <div id="inputPage" class="container mx-auto p-4 max-w-2xl fade-in">
-    <h1 class="text-2xl font-bold mb-4">Paste Your MCQ JSON</h1>
-    <p class="mb-2 text-gray-600">Enter a JSON object with <code>'metadata'</code> (topic, difficulty) and <code>'mcqs'</code> (array of questions with options, correct_answer, explanation). See sample for format.</p>
-    <textarea id="jsonInput" class="w-full h-64 sm:h-80 p-3 border rounded font-mono text-sm resize-y" placeholder="Paste your JSON here (e.g., {'metadata': ..., 'mcqs': [...]})"></textarea>
-    <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 mt-2">
-      <button id="submitJson" class="bg-[var(--primary)] hover:bg-green-700 text-white px-4 py-2 rounded" aria-label="Start quiz">Start Quiz</button>
-      <button id="sampleJson" class="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded" aria-label="Load sample JSON">Load Sample</button>
+    <div class="card slide-up">
+      <h2 class="text-2xl font-bold mb-4">Create Your Quiz</h2>
+      <p class="mb-4 text-gray-600">Enter a JSON object with <code>'metadata'</code> (topic, difficulty) and <code>'mcqs'</code> (array of questions with options, correct_answer, explanation).</p>
+      <textarea id="jsonInput" class="w-full h-64 sm:h-80 p-3 border rounded font-mono text-sm resize-y" placeholder="Paste your JSON here (e.g., {'metadata': ..., 'mcqs': [...]})"></textarea>
+      <div class="flex justify-between items-center mt-4">
+        <button id="sampleJson" class="btn-text" aria-label="Load sample JSON">Load sample data</button>
+        <button id="submitJson" class="btn btn-primary" aria-label="Start quiz">Start Quiz</button>
+      </div>
+      <p id="errorMessage" class="mt-2 text-[var(--secondary)]"></p>
     </div>
-    <p id="errorMessage" class="mt-2 text-[var(--secondary)]"></p>
+  </div>
+
+  <!-- Sample JSON Modal -->
+  <div id="sampleModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="text-xl font-bold">Load Sample Quiz?</h2>
+        <button class="close-button" id="closeModal">&times;</button>
+      </div>
+      <p class="mb-4">This will replace any existing content in the text area with a simple 2-question Spanish quiz. Continue?</p>
+      <div class="flex justify-end space-x-2">
+        <button id="cancelSample" class="btn btn-secondary">Cancel</button>
+        <button id="confirmSample" class="btn btn-primary">Load Sample</button>
+      </div>
+    </div>
   </div>
 
   <!-- MCQ Page (Hidden Initially) -->
   <div id="mcqPage" class="container mx-auto p-4 max-w-2xl hidden fade-in">
-    <div class="bg-gray-200 rounded-full h-2 mb-6 relative">
-      <div id="progressBar" class="progress-bar bg-[var(--primary)] rounded-full h-2" style="width: 0%"></div>
-      <span id="progressLabel" class="absolute top-[-1.5rem] left-0 text-sm text-gray-600"></span>
+    <div class="game-stats">
+      <div class="hearts">
+        <span class="heart">❤️</span>
+        <span class="heart">❤️</span>
+        <span class="heart">❤️</span>
+      </div>
+      <div class="points">
+        <span class="mr-1">✨</span> <span id="pointsCounter">0</span> XP
+      </div>
     </div>
-    <h1 class="text-2xl font-bold mb-2"></h1>
-    <p id="progress" class="mb-4 text-gray-600"></p>
-    <div id="question" class="mb-6 text-xl font-semibold"></div>
-    <div id="options" class="space-y-4"></div>
-    <div id="feedback" class="mt-6 p-4 rounded hidden animate-feedback"></div>
-    <div id="explanation" class="mt-4 p-4 bg-blue-50 rounded hidden animate-feedback"></div>
+    
+    <div class="progress-bar-container">
+      <div id="progressBar" class="progress-bar" style="width: 0%"></div>
+    </div>
+    
+    <div class="card slide-up">
+      <h2 class="text-xl font-bold mb-2" id="quizTitle"></h2>
+      <p id="progress" class="mb-4 text-sm text-gray-600 font-semibold"></p>
+      
+      <div id="question" class="mb-6 text-xl font-bold"></div>
+      <div id="options" class="space-y-3"></div>
+      
+      <div id="feedback" class="mt-6 p-4 rounded-lg hidden slide-up"></div>
+      <div id="explanation" class="mt-4 p-4 bg-blue-50 rounded-lg hidden slide-up"></div>
+    </div>
+    
     <div class="flex justify-between mt-6">
-      <button id="previous" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded disabled:opacity-50" disabled aria-label="Previous question">Previous</button>
-      <button id="next" class="bg-[var(--primary)] hover:bg-green-700 text-white px-4 py-2 rounded disabled:opacity-50" disabled aria-label="Next question">Next</button>
+      <button id="previous" class="btn btn-secondary" disabled aria-label="Previous question">◀ Back</button>
+      <button id="next" class="btn btn-primary" disabled aria-label="Next question">Continue ▶</button>
     </div>
   </div>
 
   <!-- Results Page (Hidden Initially) -->
   <div id="resultsPage" class="container mx-auto p-4 max-w-2xl hidden fade-in">
-    <h1 class="text-2xl font-bold mb-4">Quiz Results</h1>
-    <div id="score" class="text-3xl font-semibold text-[var(--primary)] mb-4"></div>
-    <div id="feedbackSummary" class="mb-6"></div>
-    <button id="restartQuiz" class="bg-[var(--primary)] hover:bg-green-700 text-white px-4 py-2 rounded" aria-label="Restart quiz">Start New Quiz</button>
+    <div class="card text-center slide-up">
+      <div id="resultsEmoji" class="results-icon bounce">🎉</div>
+      <h2 class="text-2xl font-bold mb-4">Quiz Complete!</h2>
+      <div id="score" class="text-3xl font-bold text-[var(--primary)] mb-4"></div>
+      <div id="scoreMessage" class="mb-6 text-lg"></div>
+      <div id="xpEarned" class="bg-[var(--accent-light)] text-[var(--accent)] font-bold p-3 rounded-lg mb-6">
+        +20 XP earned!
+      </div>
+      <button id="restartQuiz" class="btn btn-primary w-full mb-4" aria-label="Restart quiz">Start New Quiz</button>
+      <button id="shareResults" class="btn btn-accent w-full" aria-label="Share results">Share Results</button>
+    </div>
+    
+    <div class="card mt-6 slide-up">
+      <h3 class="font-bold text-xl mb-4">Question Review:</h3>
+      <div id="feedbackSummary" class="space-y-4"></div>
+    </div>
   </div>
 
   <script>
@@ -110,32 +457,64 @@
     let currentQuestion = 0;
     let score = 0;
     let userAnswers = [];
+    let hearts = 3;
+    let points = 0;
+    let streakCount = 0;
+    let confettiElements = [];
 
-    // Sample JSON data
+    // Sample JSON data - kept small and simple
     const sampleJson = JSON.stringify({
       "metadata": {
-        "topic": "Sample Quiz",
-        "difficulty": "Easy"
+        "topic": "Basic Spanish",
+        "difficulty": "Beginner"
       },
       "mcqs": [
         {
-          "question": "What is 2 + 2?",
-          "options": ["3", "4", "5", "6"],
-          "correct_answer": 2,
-          "explanation": "The sum of 2 and 2 is 4."
+          "question": "How do you say 'hello' in Spanish?",
+          "options": ["Adiós", "Gracias", "Hola", "Buenos días"],
+          "correct_answer": 3,
+          "explanation": "Hola is the most common way to say hello in Spanish."
         },
         {
-          "question": "What is the capital of France?",
-          "options": ["London", "Berlin", "Paris", "Madrid"],
-          "correct_answer": 3,
-          "explanation": "Paris is the capital city of France."
+          "question": "What is the Spanish word for 'cat'?",
+          "options": ["Perro", "Gato", "Pájaro", "Ratón"],
+          "correct_answer": 2,
+          "explanation": "Gato is the Spanish word for cat."
         }
       ]
     }, null, 2);
 
-    // Load sample JSON
-    document.getElementById('sampleJson').addEventListener('click', () => {
+    // Modal functionality
+    const modal = document.getElementById('sampleModal');
+    const closeModal = document.getElementById('closeModal');
+    const cancelSample = document.getElementById('cancelSample');
+    const confirmSample = document.getElementById('confirmSample');
+    
+    function showModal() {
+      modal.classList.remove('hidden');
+    }
+    
+    function hideModal() {
+      modal.classList.add('hidden');
+    }
+    
+    closeModal.addEventListener('click', hideModal);
+    cancelSample.addEventListener('click', hideModal);
+    
+    // When clicking outside the modal content, close the modal
+    modal.addEventListener('click', function(event) {
+      if (event.target === modal) {
+        hideModal();
+      }
+    });
+    
+    // Load sample JSON - first show confirmation modal
+    document.getElementById('sampleJson').addEventListener('click', showModal);
+    
+    // Confirm loading sample
+    confirmSample.addEventListener('click', () => {
       document.getElementById('jsonInput').value = sampleJson;
+      hideModal();
     });
 
     // Validate JSON
@@ -159,21 +538,62 @@
         mcqsData = parsedData;
         score = 0;
         userAnswers = [];
+        hearts = 3;
+        points = 0;
+        streakCount = 0;
+        
+        // Update hearts display
+        updateHearts();
+        
         document.getElementById('inputPage').classList.add('hidden');
         document.getElementById('mcqPage').classList.remove('hidden');
-        document.querySelector('#mcqPage h1').textContent = `${mcqsData.metadata.topic} - ${mcqsData.metadata.difficulty} Level`;
+        document.getElementById('quizTitle').textContent = `${mcqsData.metadata.topic} - ${mcqsData.metadata.difficulty}`;
         displayQuestion();
       } else {
         document.getElementById('errorMessage').textContent = 'Invalid JSON format. Please ensure it includes "metadata" and "mcqs" fields.';
       }
     });
 
+    // Function to update hearts display
+    function updateHearts() {
+      const heartsContainer = document.querySelector('.hearts');
+      heartsContainer.innerHTML = '';
+      
+      for (let i = 0; i < 3; i++) {
+        const heart = document.createElement('span');
+        heart.className = 'heart';
+        heart.textContent = i < hearts ? '❤️' : '🖤';
+        heartsContainer.appendChild(heart);
+      }
+    }
+
+    // Function to update points display
+    function updatePoints(newPoints) {
+      points += newPoints;
+      const pointsCounter = document.getElementById('pointsCounter');
+      const currentPoints = parseInt(pointsCounter.textContent);
+      
+      // Animate the points counter
+      let step = 0;
+      const stepsTotal = 20;
+      const pointsToAdd = newPoints / stepsTotal;
+      
+      const interval = setInterval(() => {
+        if (step >= stepsTotal) {
+          clearInterval(interval);
+          pointsCounter.textContent = points;
+        } else {
+          pointsCounter.textContent = Math.round(currentPoints + (pointsToAdd * step));
+          step++;
+        }
+      }, 50);
+    }
+
     // Function to display the current question
     function displayQuestion() {
       const question = mcqsData.mcqs[currentQuestion];
       document.getElementById('progress').textContent = `Question ${currentQuestion + 1} of ${mcqsData.mcqs.length}`;
       document.getElementById('progressBar').style.width = `${((currentQuestion + 1) / mcqsData.mcqs.length) * 100}%`;
-      document.getElementById('progressLabel').textContent = `${currentQuestion + 1}/${mcqsData.mcqs.length}`;
       document.getElementById('question').textContent = question.question;
 
       const optionsDiv = document.getElementById('options');
@@ -184,7 +604,10 @@
         const div = document.createElement('div');
         div.innerHTML = `
           <input type="radio" name="option" id="opt${index}" class="hidden" value="${index}">
-          <label for="opt${index}" class="option-label">${String.fromCharCode(65 + index)}. ${option}</label>
+          <label for="opt${index}" class="option-label">
+            <span class="option-marker">${String.fromCharCode(65 + index)}</span>
+            <span>${option}</span>
+          </label>
         `;
         div.querySelector('input').addEventListener('change', () => checkAnswer(index));
         optionsDiv.appendChild(div);
@@ -199,13 +622,52 @@
       document.getElementById('previous').disabled = currentQuestion === 0;
     }
 
+    // Function to create and animate confetti
+    function createConfetti() {
+      const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+      const container = document.getElementById('mcqPage');
+      
+      // Create 50 confetti elements
+      for (let i = 0; i < 50; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti';
+        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        confetti.style.left = `${Math.random() * 100}%`;
+        confetti.style.top = `-10px`;
+        container.appendChild(confetti);
+        confettiElements.push(confetti);
+        
+        // Animate the confetti
+        const duration = 1000 + Math.random() * 2000;
+        const keyframes = [
+          { transform: `translate(0, 0) rotate(0deg)`, opacity: 1 },
+          { transform: `translate(${-50 + Math.random() * 100}px, ${window.innerHeight}px) rotate(${Math.random() * 360}deg)`, opacity: 0 }
+        ];
+        
+        confetti.animate(keyframes, {
+          duration: duration,
+          easing: 'cubic-bezier(0.1, 0.8, 0.2, 1)',
+          fill: 'forwards'
+        });
+        
+        // Remove the confetti element after animation
+        setTimeout(() => {
+          if (container.contains(confetti)) {
+            container.removeChild(confetti);
+          }
+          confettiElements = confettiElements.filter(el => el !== confetti);
+        }, duration);
+      }
+    }
+
     // Function to check the selected answer
     function checkAnswer(selectedIndex) {
       const question = mcqsData.mcqs[currentQuestion];
       const correctIndex = question.correct_answer - 1;
       const feedback = document.getElementById('feedback');
       const explanation = document.getElementById('explanation');
-
+      const selectedLabel = document.querySelector(`label[for="opt${selectedIndex}"]`);
+      
       // Record user answer
       userAnswers.push({
         question: question.question,
@@ -214,17 +676,45 @@
         explanation: question.explanation
       });
 
-      feedback.classList.remove('hidden');
+      feedback.classList.remove('hidden', 'bg-green-100', 'bg-red-100', 'border-green-400', 'border-red-400');
       explanation.classList.remove('hidden');
+      
       if (selectedIndex === correctIndex) {
-        feedback.textContent = '✅ Correct!';
-        feedback.classList.add('bg-green-100', 'border', 'border-[var(--primary)]');
+        // Correct answer
+        feedback.textContent = '✅ Correct! Great job!';
+        feedback.classList.add('bg-green-100', 'border', 'border-green-400', 'p-4', 'rounded-lg');
+        selectedLabel.classList.add('feedback-correct');
         score++;
+        
+        // Add streak bonus
+        streakCount++;
+        let pointsToAdd = 10;
+        
+        if (streakCount >= 3) {
+          pointsToAdd = 15;
+          feedback.textContent = `✅ Correct! ${streakCount} in a row! 🔥`;
+        }
+        
+        updatePoints(pointsToAdd);
+        
+        // Show confetti for correct answers
+        createConfetti();
       } else {
-        feedback.textContent = `❌ Incorrect. The correct answer was ${String.fromCharCode(65 + correctIndex)}.`;
-        feedback.classList.add('bg-red-100', 'border', 'border-[var(--secondary)]');
+        // Incorrect answer
+        feedback.textContent = `❌ Not quite! The correct answer was ${String.fromCharCode(65 + correctIndex)}.`;
+        feedback.classList.add('bg-red-100', 'border', 'border-red-400', 'p-4', 'rounded-lg');
+        selectedLabel.classList.add('feedback-incorrect');
+        
+        // Reset streak
+        streakCount = 0;
+        
+        // Decrease hearts
+        hearts--;
+        updateHearts();
       }
+      
       explanation.textContent = question.explanation;
+      explanation.classList.add('p-4', 'rounded-lg', 'bg-blue-50');
 
       // Disable all option buttons after selection
       document.querySelectorAll('#options input').forEach(input => input.disabled = true);
@@ -236,22 +726,50 @@
       document.getElementById('mcqPage').classList.add('hidden');
       document.getElementById('resultsPage').classList.remove('hidden');
       
+      const scorePercent = Math.round((score / mcqsData.mcqs.length) * 100);
       const scoreElement = document.getElementById('score');
-      scoreElement.textContent = `You scored ${score} out of ${mcqsData.mcqs.length} (${Math.round((score / mcqsData.mcqs.length) * 100)}%)`;
+      scoreElement.textContent = `${score} out of ${mcqsData.mcqs.length} (${scorePercent}%)`;
+      
+      // Set emoji and message based on score
+      const resultsEmoji = document.getElementById('resultsEmoji');
+      const scoreMessage = document.getElementById('scoreMessage');
+      const xpEarned = document.getElementById('xpEarned');
+      
+      if (scorePercent >= 90) {
+        resultsEmoji.textContent = '🏆';
+        scoreMessage.textContent = 'Excellent! You\'re a natural!';
+        xpEarned.textContent = `+${points} XP earned! Amazing job!`;
+      } else if (scorePercent >= 70) {
+        resultsEmoji.textContent = '🎉';
+        scoreMessage.textContent = 'Great job! Keep practicing!';
+        xpEarned.textContent = `+${points} XP earned!`;
+      } else if (scorePercent >= 50) {
+        resultsEmoji.textContent = '👍';
+        scoreMessage.textContent = 'Good effort! Try again to improve.';
+        xpEarned.textContent = `+${points} XP earned!`;
+      } else {
+        resultsEmoji.textContent = '🔄';
+        scoreMessage.textContent = 'Keep practicing! You\'ll get there.';
+        xpEarned.textContent = `+${points} XP earned! Don't give up!`;
+      }
       
       const feedbackSummary = document.getElementById('feedbackSummary');
-      feedbackSummary.innerHTML = '<h3 class="font-bold mb-2">Question Review:</h3>' + 
-        userAnswers.map((answer, i) => {
-          const isCorrect = answer.userAnswer === answer.correctAnswer;
-          return `
-            <div class="mb-4 p-3 ${isCorrect ? 'bg-green-50' : 'bg-red-50'} rounded">
-              <p class="font-medium">Q${i+1}: ${answer.question}</p>
-              <p>Your answer: ${String.fromCharCode(65 + answer.userAnswer)}</p>
-              ${!isCorrect ? `<p>Correct answer: ${String.fromCharCode(65 + answer.correctAnswer)}</p>` : ''}
-              <p class="mt-2 text-sm">${answer.explanation}</p>
+      feedbackSummary.innerHTML = userAnswers.map((answer, i) => {
+        const isCorrect = answer.userAnswer === answer.correctAnswer;
+        return `
+          <div class="question-review ${isCorrect ? 'correct' : 'incorrect'}">
+            <div class="flex items-start">
+              <span class="mr-2 mt-1">${isCorrect ? '✅' : '❌'}</span>
+              <div>
+                <p class="font-medium">Q${i+1}: ${answer.question}</p>
+                <p class="text-sm">Your answer: ${String.fromCharCode(65 + answer.userAnswer)} (${mcqsData.mcqs[i].options[answer.userAnswer]})</p>
+                ${!isCorrect ? `<p class="text-sm font-medium text-[var(--primary)]">Correct answer: ${String.fromCharCode(65 + answer.correctAnswer)} (${mcqsData.mcqs[i].options[answer.correctAnswer]})</p>` : ''}
+                <p class="mt-1 text-sm text-gray-600">${answer.explanation}</p>
+              </div>
             </div>
-          `;
-        }).join('');
+          </div>
+        `;
+      }).join('');
     }
 
     // Event listener for the "Previous" button
@@ -276,6 +794,24 @@
       document.getElementById('inputPage').classList.remove('hidden');
       document.getElementById('jsonInput').value = '';
       currentQuestion = 0;
+    });
+    
+    // Event listener for the "Share Results" button
+    document.getElementById('shareResults').addEventListener('click', () => {
+      const text = `I scored ${score}/${mcqsData.mcqs.length} on the ${mcqsData.metadata.topic} quiz! Try it yourself!`;
+      
+      // Check if Web Share API is available
+      if (navigator.share) {
+        navigator.share({
+          title: 'My LingLearn Quiz Results',
+          text: text
+        }).catch(console.error);
+      } else {
+        // Fallback - copy to clipboard
+        navigator.clipboard.writeText(text).then(() => {
+          alert('Results copied to clipboard!');
+        }).catch(console.error);
+      }
     });
   </script>
 </body>
