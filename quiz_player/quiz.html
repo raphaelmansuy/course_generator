@@ -4,31 +4,139 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MCQ Practice</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --primary: #10b981; /* Green, Duolingo-inspired */
+      --secondary: #ef4444; /* Red for errors */
+      --bg-light: #f9fafb; /* Light background */
+      --text-dark: #1f2937; /* Dark text */
+    }
+    body {
+      background-color: var(--bg-light);
+      font-family: 'Inter', sans-serif;
+      color: var(--text-dark);
+    }
+    .option-label {
+      display: block;
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1px solid #d1d5db;
+      border-radius: 0.375rem;
+      cursor: pointer;
+    }
+    .option-label:hover {
+      background-color: #f3f4f6;
+    }
+    input[type="radio"]:checked + .option-label {
+      border-color: var(--primary);
+      background-color: #ecfdf5;
+    }
+    .progress-bar {
+      height: 6px;
+      transition: width 0.3s ease;
+    }
+    /* Animations */
+    .fade-in {
+      animation: fadeIn 0.3s ease-in;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .animate-feedback {
+      animation: feedbackFade 0.3s ease-in;
+    }
+    @keyframes feedbackFade {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    /* Responsive adjustments */
+    @media (max-width: 640px) {
+      h1 {
+        font-size: 1.5rem;
+      }
+      .text-lg, .text-xl {
+        font-size: 1rem;
+      }
+      button {
+        padding: 0.75rem 1rem;
+      }
+    }
+  </style>
 </head>
-<body>
+<body class="bg-gray-50">
   <!-- JSON Input Page -->
-  <div id="inputPage" class="container mx-auto p-4">
+  <div id="inputPage" class="container mx-auto p-4 max-w-2xl fade-in">
     <h1 class="text-2xl font-bold mb-4">Paste Your MCQ JSON</h1>
-    <textarea id="jsonInput" class="w-full h-64 p-2 border rounded" placeholder="Paste your JSON here (e.g., {'metadata': ..., 'mcqs': [...]})"></textarea>
-    <button id="submitJson" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded">Start Quiz</button>
-    <p id="errorMessage" class="mt-2 text-red-500"></p>
+    <p class="mb-2 text-gray-600">Enter a JSON object with <code>'metadata'</code> (topic, difficulty) and <code>'mcqs'</code> (array of questions with options, correct_answer, explanation). See sample for format.</p>
+    <textarea id="jsonInput" class="w-full h-64 sm:h-80 p-3 border rounded font-mono text-sm resize-y" placeholder="Paste your JSON here (e.g., {'metadata': ..., 'mcqs': [...]})"></textarea>
+    <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 mt-2">
+      <button id="submitJson" class="bg-[var(--primary)] hover:bg-green-700 text-white px-4 py-2 rounded" aria-label="Start quiz">Start Quiz</button>
+      <button id="sampleJson" class="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded" aria-label="Load sample JSON">Load Sample</button>
+    </div>
+    <p id="errorMessage" class="mt-2 text-[var(--secondary)]"></p>
   </div>
 
   <!-- MCQ Page (Hidden Initially) -->
-  <div id="mcqPage" class="container mx-auto p-4 hidden">
-    <h1 class="text-2xl font-bold mb-4"></h1>
-    <p id="progress" class="mb-4"></p>
-    <div id="question" class="mb-4 text-lg"></div>
-    <div id="options" class="space-y-2"></div>
-    <div id="feedback" class="mt-4 text-xl font-semibold"></div>
-    <div id="explanation" class="mt-4"></div>
-    <button id="next" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded" disabled>Next</button>
+  <div id="mcqPage" class="container mx-auto p-4 max-w-2xl hidden fade-in">
+    <div class="bg-gray-200 rounded-full h-2 mb-6 relative">
+      <div id="progressBar" class="progress-bar bg-[var(--primary)] rounded-full h-2" style="width: 0%"></div>
+      <span id="progressLabel" class="absolute top-[-1.5rem] left-0 text-sm text-gray-600"></span>
+    </div>
+    <h1 class="text-2xl font-bold mb-2"></h1>
+    <p id="progress" class="mb-4 text-gray-600"></p>
+    <div id="question" class="mb-6 text-xl font-semibold"></div>
+    <div id="options" class="space-y-4"></div>
+    <div id="feedback" class="mt-6 p-4 rounded hidden animate-feedback"></div>
+    <div id="explanation" class="mt-4 p-4 bg-blue-50 rounded hidden animate-feedback"></div>
+    <div class="flex justify-between mt-6">
+      <button id="previous" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded disabled:opacity-50" disabled aria-label="Previous question">Previous</button>
+      <button id="next" class="bg-[var(--primary)] hover:bg-green-700 text-white px-4 py-2 rounded disabled:opacity-50" disabled aria-label="Next question">Next</button>
+    </div>
+  </div>
+
+  <!-- Results Page (Hidden Initially) -->
+  <div id="resultsPage" class="container mx-auto p-4 max-w-2xl hidden fade-in">
+    <h1 class="text-2xl font-bold mb-4">Quiz Results</h1>
+    <div id="score" class="text-3xl font-semibold text-[var(--primary)] mb-4"></div>
+    <div id="feedbackSummary" class="mb-6"></div>
+    <button id="restartQuiz" class="bg-[var(--primary)] hover:bg-green-700 text-white px-4 py-2 rounded" aria-label="Restart quiz">Start New Quiz</button>
   </div>
 
   <script>
     let mcqsData = null;
     let currentQuestion = 0;
+    let score = 0;
+    let userAnswers = [];
+
+    // Sample JSON data
+    const sampleJson = JSON.stringify({
+      "metadata": {
+        "topic": "Sample Quiz",
+        "difficulty": "Easy"
+      },
+      "mcqs": [
+        {
+          "question": "What is 2 + 2?",
+          "options": ["3", "4", "5", "6"],
+          "correct_answer": 2,
+          "explanation": "The sum of 2 and 2 is 4."
+        },
+        {
+          "question": "What is the capital of France?",
+          "options": ["London", "Berlin", "Paris", "Madrid"],
+          "correct_answer": 3,
+          "explanation": "Paris is the capital city of France."
+        }
+      ]
+    }, null, 2);
+
+    // Load sample JSON
+    document.getElementById('sampleJson').addEventListener('click', () => {
+      document.getElementById('jsonInput').value = sampleJson;
+    });
 
     // Validate JSON
     function validateJson(data) {
@@ -49,9 +157,10 @@
       const parsedData = validateJson(jsonInput);
       if (parsedData) {
         mcqsData = parsedData;
+        score = 0;
+        userAnswers = [];
         document.getElementById('inputPage').classList.add('hidden');
         document.getElementById('mcqPage').classList.remove('hidden');
-        // Set the title using metadata
         document.querySelector('#mcqPage h1').textContent = `${mcqsData.metadata.topic} - ${mcqsData.metadata.difficulty} Level`;
         displayQuestion();
       } else {
@@ -63,47 +172,93 @@
     function displayQuestion() {
       const question = mcqsData.mcqs[currentQuestion];
       document.getElementById('progress').textContent = `Question ${currentQuestion + 1} of ${mcqsData.mcqs.length}`;
+      document.getElementById('progressBar').style.width = `${((currentQuestion + 1) / mcqsData.mcqs.length) * 100}%`;
+      document.getElementById('progressLabel').textContent = `${currentQuestion + 1}/${mcqsData.mcqs.length}`;
       document.getElementById('question').textContent = question.question;
 
       const optionsDiv = document.getElementById('options');
       optionsDiv.innerHTML = '';
 
-      // Create option buttons
+      // Create option radio buttons
       question.options.forEach((option, index) => {
-        const button = document.createElement('button');
-        button.textContent = `${String.fromCharCode(65 + index)}. ${option}`;
-        button.classList.add('block', 'w-full', 'text-left', 'p-2', 'border', 'rounded');
-        button.addEventListener('click', () => checkAnswer(index));
-        optionsDiv.appendChild(button);
+        const div = document.createElement('div');
+        div.innerHTML = `
+          <input type="radio" name="option" id="opt${index}" class="hidden" value="${index}">
+          <label for="opt${index}" class="option-label">${String.fromCharCode(65 + index)}. ${option}</label>
+        `;
+        div.querySelector('input').addEventListener('change', () => checkAnswer(index));
+        optionsDiv.appendChild(div);
       });
 
       // Reset feedback and explanation
       document.getElementById('feedback').textContent = '';
+      document.getElementById('feedback').classList.add('hidden');
       document.getElementById('explanation').textContent = '';
+      document.getElementById('explanation').classList.add('hidden');
       document.getElementById('next').disabled = true;
+      document.getElementById('previous').disabled = currentQuestion === 0;
     }
 
     // Function to check the selected answer
     function checkAnswer(selectedIndex) {
       const question = mcqsData.mcqs[currentQuestion];
-      const correctIndex = question.correct_answer - 1; // Convert from 1-based to 0-based index
-      const options = document.getElementById('options').children;
+      const correctIndex = question.correct_answer - 1;
+      const feedback = document.getElementById('feedback');
+      const explanation = document.getElementById('explanation');
 
+      // Record user answer
+      userAnswers.push({
+        question: question.question,
+        userAnswer: selectedIndex,
+        correctAnswer: correctIndex,
+        explanation: question.explanation
+      });
+
+      feedback.classList.remove('hidden');
+      explanation.classList.remove('hidden');
       if (selectedIndex === correctIndex) {
-        options[selectedIndex].classList.add('bg-green-200');
-        document.getElementById('feedback').textContent = 'Correct!';
+        feedback.textContent = '✅ Correct!';
+        feedback.classList.add('bg-green-100', 'border', 'border-[var(--primary)]');
+        score++;
       } else {
-        options[selectedIndex].classList.add('bg-red-200');
-        options[correctIndex].classList.add('bg-green-200');
-        document.getElementById('feedback').textContent = 'Incorrect.';
+        feedback.textContent = `❌ Incorrect. The correct answer was ${String.fromCharCode(65 + correctIndex)}.`;
+        feedback.classList.add('bg-red-100', 'border', 'border-[var(--secondary)]');
       }
-
-      document.getElementById('explanation').textContent = question.explanation;
+      explanation.textContent = question.explanation;
 
       // Disable all option buttons after selection
-      Array.from(options).forEach(button => button.disabled = true);
+      document.querySelectorAll('#options input').forEach(input => input.disabled = true);
       document.getElementById('next').disabled = false;
     }
+
+    // Show results
+    function showResults() {
+      document.getElementById('mcqPage').classList.add('hidden');
+      document.getElementById('resultsPage').classList.remove('hidden');
+      
+      const scoreElement = document.getElementById('score');
+      scoreElement.textContent = `You scored ${score} out of ${mcqsData.mcqs.length} (${Math.round((score / mcqsData.mcqs.length) * 100)}%)`;
+      
+      const feedbackSummary = document.getElementById('feedbackSummary');
+      feedbackSummary.innerHTML = '<h3 class="font-bold mb-2">Question Review:</h3>' + 
+        userAnswers.map((answer, i) => {
+          const isCorrect = answer.userAnswer === answer.correctAnswer;
+          return `
+            <div class="mb-4 p-3 ${isCorrect ? 'bg-green-50' : 'bg-red-50'} rounded">
+              <p class="font-medium">Q${i+1}: ${answer.question}</p>
+              <p>Your answer: ${String.fromCharCode(65 + answer.userAnswer)}</p>
+              ${!isCorrect ? `<p>Correct answer: ${String.fromCharCode(65 + answer.correctAnswer)}</p>` : ''}
+              <p class="mt-2 text-sm">${answer.explanation}</p>
+            </div>
+          `;
+        }).join('');
+    }
+
+    // Event listener for the "Previous" button
+    document.getElementById('previous').addEventListener('click', () => {
+      currentQuestion--;
+      displayQuestion();
+    });
 
     // Event listener for the "Next" button
     document.getElementById('next').addEventListener('click', () => {
@@ -111,14 +266,16 @@
       if (currentQuestion < mcqsData.mcqs.length) {
         displayQuestion();
       } else {
-        alert('You have completed all questions!');
-        // Reset to input page
-        document.getElementById('mcqPage').classList.add('hidden');
-        document.getElementById('inputPage').classList.remove('hidden');
-        currentQuestion = 0;
-        document.getElementById('jsonInput').value = ''; // Clear input
-        document.getElementById('errorMessage').textContent = '';
+        showResults();
       }
+    });
+
+    // Event listener for the "Restart Quiz" button
+    document.getElementById('restartQuiz').addEventListener('click', () => {
+      document.getElementById('resultsPage').classList.add('hidden');
+      document.getElementById('inputPage').classList.remove('hidden');
+      document.getElementById('jsonInput').value = '';
+      currentQuestion = 0;
     });
   </script>
 </body>
