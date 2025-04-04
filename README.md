@@ -1,363 +1,108 @@
-# 📚 Course Generator
+# AI Course Generator 🚀
 
-An enterprise-grade solution for generating structured educational content with AI integration and automated publishing workflows. This project leverages the powerful QuantaLogic Flow library to define and manage the complex workflow of course generation.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python Version](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 
-## 💡 About QuantaLogic Flow
+An intelligent CLI tool for generating structured educational content using AI models.
 
-[QuantaLogic Flow](https://github.com/quantalogic/quantalogic) is a versatile Python library designed to simplify the creation and execution of complex workflows. It provides a declarative way to define a series of interconnected tasks (nodes), manage the flow of data between them, and handle error conditions gracefully. Key features include:
+## Table of Contents
+- [Key Features](#key-features)
+- [Quick Start](#quick-start)
+- [Installation Options](#installation-options)
+- [Usage Guide](#usage-guide)
+  - [Interactive Mode](#interactive-mode)
+  - [Direct Command Usage](#direct-command-usage)
+- [Configuration Reference](#configuration-reference)
+- [Examples](#examples)
+- [Contributing](#contributing)
+- [License](#license)
 
--   **Node-based Architecture**: Workflows are built from individual nodes, each representing a specific task or operation.
--   **Declarative Definition**: Workflows are defined in a clear and concise manner, making them easy to understand and maintain.
--   **Asynchronous Execution**: Supports asynchronous execution of tasks for improved performance and responsiveness.
--   **Error Handling**: Provides mechanisms for handling errors and retries, ensuring robust and reliable workflow execution.
+## Key Features
 
-## 📦 Installation
+✔ **Multi-format Output** - Generate courses in PDF, DOCX, and EPUB formats  
+✔ **Smart Configuration** - Customize length, difficulty, and content depth  
+✔ **Model Flexibility** - Supports multiple AI models including Gemini  
+✔ **User-Friendly CLI** - Interactive prompts or direct command options  
+✔ **Structured Content** - Automatically generates chapters and outlines  
 
-The AI Course Generator is available on PyPI and can be installed using pip or pipx.
-
-### Using pip
-
-```bash
-pip install ai-course-generator
-```
-
-### Using pipx (Recommended for CLI tools)
-
-[pipx](https://pypa.github.io/pipx/) installs the package in an isolated environment and makes the command available globally.
-
-```bash
-# Install pipx if you don't have it
-pip install pipx
-pipx ensurepath
-
-# Install ai-course-generator
-pipx install ai-course-generator
-```
-
-### Verify Installation
-
-After installation, verify that the tool is correctly installed by checking the version:
+## Quick Start
 
 ```bash
-ai-course-generator --help
+# Run in interactive mode (recommended for first-time users)
+python -m ai_course_generator.generate_course generate --interactive
 ```
 
-## 🛠️ Development Overview
+## Installation Options
 
-This course generator is developed using a modular architecture, with each component responsible for a specific aspect of the course creation process. The main components include:
-
--   **CLI Interface (generate_course.py)**: Provides a command-line interface for users to interact with the course generator.
--   **Workflow Engine (course_generator_agent.py)**: Defines the overall workflow of course generation using the QuantaLogic Flow library.
--   **AI Content Generation**: Leverages AI models (via the LiteLLM library) to generate course titles, outlines, and chapter content.
--   **Mermaid Diagram Processing (mermaid_processor.py)**: Processes Mermaid diagrams embedded in the course content and generates corresponding images.
--   **Document Export**: Converts the generated course content into various output formats (PDF, DOCX, EPUB) using Pandoc.
-
-## 🚀 Features
-
--   AI-powered course content generation
--   Automated publishing workflows
--   Support for multiple output formats (PDF, DOCX, EPUB)
--   Interactive CLI for easy course creation
--   Mermaid diagram processing
-
-```mermaid
-flowchart TD
-    A[CLI Interface] --> B{Quantalogic Flow Engine}
-    B --> C[Validation Node]
-    C --> D[Title Generator]
-    D --> E[Outline Builder]
-    E --> F[Chapter Sequencer]
-    F --> G[Content Generator]
-    G --> H[Mermaid Processor]
-    H --> I[Document Exporter]
-    I --> J[PDF/DOCX/EPUB]
-```
-
-## ⚙️ Technical Foundations
-
-### 💻 Core Dependencies
-
-```python
-# Embedded in script headers
-requires-python = ">=3.12"  # Non-negotiable version
-dependencies = [
-    "loguru",               # Structured logging
-    "litellm",              # LLM abstraction layer
-    "pydantic>=2.0",        # Data validation
-    "anyio",                # Async primitives
-    "pypandoc",             # Document conversion
-    "typer",                # CLI construction
-    "rich",                 # Console interface
-    "aiofiles"              # Async file IO
-]
-```
-
-### 🛠️ System Requirements
-
-| Component       | Minimum Version | Verification Command     |
-|-----------------|-----------------|--------------------------|
-| Python          | 3.12.0          | `python3.12 --version`   |
-| Node.js         | 20.3.1          | `node --version`         |
-| Mermaid CLI     | 10.2.4          | `mmdc --version`         |
-| Pandoc          | 3.1.12.1        | `pandoc --version`       |
-| LaTeX           | 2023.00         | `lualatex --version`     |
-| UV (Pip)        | Latest          | `uv --version`           |
-
-## 🔧 Precision Installation
-
-### 📦 System Preparation
-
+### Standard Installation
 ```bash
-# 1. Install Python 3.12 with UV
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# 2. Install Mermaid CLI
-npm install -g @mermaid-js/mermaid-cli@10.2.4
-
-# 3. Install Document Toolchain
-sudo apt-get install -y \
-    pandoc=3.1.12.1-* \
-    texlive-full=2023.20230725-3
+git clone https://github.com/raphaelmansuy/course-generator.git
+cd course-generator
+pip install -e .
 ```
 
-### ⬇️ Dependency Installation (UV-optimized)
-
+### Isolated Installation (recommended)
 ```bash
-uv pip install \
-    -r generate_course.py \
-    -r course_generator_agent.py \
-    --python python3.12
+pipx install git+https://github.com/raphaelmansuy/course-generator.git
 ```
 
-### ✅ Post-Install Verification
+## Usage Guide
 
+### Interactive Mode
 ```bash
-# Validate critical paths
-echo "Validating Mermaid: $(mmdc --version)"
-echo "Validating Python: $(python3.12 -c 'import sys; print(sys.version)')"
-echo "Pandoc capabilities: $(pandoc --list-output-formats)"
+python -m ai_course_generator.generate_course generate -i
 ```
+The interactive mode will guide you through all configuration options with sensible defaults.
 
-## 🚀 Execution Workflows
-
-### ⌨️ CLI Execution Protocol
-
+### Direct Command Usage
 ```bash
-# Standard generation with safety checks
-ai-course-generator \
-  --subject "Advanced Systems Programming" \
-  --number-of-chapters 4 \
-  --level expert \
-  --words-by-chapter 2500 \
-  --target-directory ./sysprog-course \
-  --pdf-generation \
-  --docx-generation \
-  --model-name "anthropic/claude-3-opus"
-
-# Interactive mode
-ai-course-generator --interactive
+python -m ai_course_generator.generate_course generate \
+  --subject "Data Science" \
+  --level intermediate \
+  --words-by-chapter 1200 \
+  --no-epub
 ```
 
-### 🎛️ CLI Options Detailed
+## Configuration Reference
 
-```
-Usage: ai-course-generator [OPTIONS]                                                                                                     
-                                                                                                                                          
- Generate a course plan based on parameters                                                                                               
-                                                                                                                                          
-╭─ Options ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ --subject                                         TEXT     Course subject [default: None]                                              │
-│ --number-of-chapters                              INTEGER  Number of chapters [default: None]                                          │
-│ --level                                           TEXT     Difficulty level (beginner/intermediate/advanced) [default: None]           │
-│ --words-by-chapter                                INTEGER  Number of words per chapter [default: None]                                 │
-│ --target-directory                                TEXT     Target directory for course output [default: None]                          │
-│ --pdf-generation          --no-pdf-generation              Generate PDF version of the course [default: pdf-generation]                │
-│ --docx-generation         --no-docx-generation             Generate DOCX version of the course [default: docx-generation]              │
-│ --epub-generation         --no-epub-generation             Generate EPUB version of the course [default: no-epub-generation]           │
-│ --model-name                                      TEXT     AI model to use for course generation [default: None]                       │
-│ --interactive         -i                                   Enable interactive mode                                                     │
-│ --help                                                     Show this message and exit.                                                 │
-╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
-```
+| Parameter | Description | Values | Default |
+|-----------|-------------|--------|---------|
+| `--subject` | Course topic | Any string | Required |
+| `--level` | Difficulty | beginner/intermediate/advanced | intermediate |
+| `--number-of-chapters` | Course length | 1-20 | 5 |
+| `--words-by-chapter` | Content depth | 500-5000 | 1000 |
+| `--target-directory` | Output path | Valid path | ./courses/[subject] |
+| `--model-name` | AI model | Supported model name | gemini/gemini-2.0-flash |
 
-| Option               | Description                                      | Default   | Type    | Additional Notes |
-|----------------------|--------------------------------------------------|-----------|---------|-----------------|
-| `--subject`          | Course subject                                   | None      | TEXT    | Optional |
-| `--number-of-chapters`| Number of chapters                              | None      | INTEGER | Optional |
-| `--level`            | Difficulty level (beginner/intermediate/advanced)| None      | TEXT    | Optional |
-| `--words-by-chapter` | Number of words per chapter                      | None      | INTEGER | Optional |
-| `--target-directory` | Target directory for course output               | None      | TEXT    | Optional |
-| `--pdf-generation`   | Generate PDF version of the course               | Enabled   | Flag    | Use `--no-pdf-generation` to disable |
-| `--docx-generation`  | Generate DOCX version of the course              | Enabled   | Flag    | Use `--no-docx-generation` to disable |
-| `--epub-generation`  | Generate EPUB version of the course              | Disabled  | Flag    | Use `--epub-generation` to enable |
-| `--model-name`       | AI model to use for course generation            | None      | TEXT    | Optional |
-| `--interactive`, `-i`| Enable interactive mode                          | N/A       | Flag    | Shorthand `-i` available |
-| `--help`             | Show help message and exit                       | N/A       | Flag    | Displays all available options |
+## Examples
 
-### 🐞 Debug Mode Activation
-
+**1. Beginner-Friendly Course**
 ```bash
-LOG_LEVEL=TRACE LITELLM_LOGLEVEL=DEBUG \
-ai-course-generator --subject "Debug Course" --number-of-chapters 1
+python -m ai_course_generator.generate_course generate \
+  --subject "Python Basics" \
+  --level beginner \
+  --words-by-chapter 600
 ```
 
-## 🏛️ Architecture Deep Dive
-
-### 🧩 Component Interaction
-
-```mermaid
-sequenceDiagram
-    participant CLI as Typer CLI
-    participant QF as qflow Engine
-    participant AGT as Course Agent
-    participant LLM as AI Provider
-    participant MMD as Mermaid
-    participant DOC as Pandoc
-
-    CLI->>QF: Initialize State
-    QF->>AGT: Execute Workflow
-    AGT->>LLM: Generate Content (async)
-    LLM-->>AGT: Structured Markdown
-    AGT->>MMD: Process Diagrams
-    MMD-->>AGT: Rendered Images
-    AGT->>DOC: Convert Formats
-    DOC-->>CLI: Final Documents
-```
-
-### 🔑 Key Code Contracts
-
-1.  **Workflow Engine (qflow.py)**
-
-    *   Strict node input validation
-    *   Exponential backoff retry (base delay: 1s, max 3 attempts)
-    *   Async-first execution model
-2.  **Mermaid Processor (mermaid_processor.py)**
-
-    *   Supported diagram types:
-
-        ```python
-        ALLOWED_DIAGRAM_TYPES = [
-            'zenuml', 'flowchart', 'sequenceDiagram',
-            'classDiagram', 'stateDiagram', 'erDiagram',
-            'gantt', 'journey', 'gitGraph', 'pie',
-            'mindmap', 'quadrantChart', 'xychart',
-            'block-beta', 'packet-beta'
-        ]
-        ```
-    *   Auto-scaling to 2x resolution (Retina-ready)
-3.  **Document Exporter**
-
-    *   PDF: LuaLaTeX engine with custom preamble
-    *   DOCX: Strict style inheritance
-    *   EPUB: Semantic markup preservation
-
-## 🏆 Operational Excellence
-
-### 🚨 Error Handling Protocol
-
-```mermaid
-graph TD
-    A[Node Execution] --> B{Success?}
-    B -->|Yes| C[Update Context]
-    B -->|No| D{Retry <3?}
-    D -->|Yes| E[Wait 2^n sec]
-    E --> A
-    D -->|No| F[Fail Workflow]
-    F --> G[Clean Temp Files]
-    G --> H[Log Forensic Data]
-```
-
-### 📊 Monitoring Endpoints
-
+**2. Technical Deep Dive**
 ```bash
-# Real-time workflow tracking
-tail -f course_generation.log | jq
-
-# LLM Metrics
-litellm-monitor
+python -m ai_course_generator.generate_course generate \
+  --subject "Advanced Kubernetes" \
+  --level advanced \
+  --words-by-chapter 2000 \
+  --model-name "gemini/gemini-2.0-pro"
 ```
 
-## 🔍 Validation & Testing
+## Contributing
 
-### ✅ Sample Verification Suite
+We welcome contributions! Please see our [Contribution Guidelines](CONTRIBUTING.md) for details.
 
-*   Comprehensive test coverage for each component
-*   Async workflow simulation
-*   Error injection and recovery testing
-*   Performance benchmarking
-
-## 🛑 Troubleshooting Matrix
-
-| Symptom                  | Diagnostic Command                   | Corrective Action                                |
-|--------------------------|--------------------------------------|--------------------------------------------------|
-| Mermaid render failures  | `mmdc -i invalid.mmd -o test.png`    | Validate diagram syntax with official validator  |
-| PDF generation stalls    | `lualatex --draftmode test.tex`      | Check LaTeX package dependencies                 |
-| LLM timeouts             | `curl -X POST $LLM_ENDPOINT/health`  | Verify API endpoint connectivity and rate limits |
-| Encoding errors          | `iconv -f UTF-8 -t UTF-8 test.md`    | Ensure UTF-8 encoding in all templates           |
-| Async deadlocks          | `py-spy dump --pid $(pgrep python)`  | Analyze thread contention points                 |
-
-## 📜 Exemplar Output
-
-### 🌳 Generated Course Structure
-
-```bash
-sysprog-course/
-├── assets/
-│   ├── memory_layout.png
-│   └── concurrency_model.png
-├── chapters/
-│   ├── 01_memory_safety.md
-│   └── 02_async_programming.md
-├── outline.md
-├── sysprog-course.pdf
-└── generation_manifest.json
-```
-
-### 📄 Sample Chapter Fragment
-
-````markdown
-## Memory Management in Rust
-
-```mermaid
-stateDiagram-v2
-    [*] --> Uninitialized
-    Uninitialized --> Allocated: let x = Box::new()
-    Allocated --> Borrowed: &x
-    Borrowed --> Returned: Drop
-    Returned --> [*]
-```
-
-Key Concepts:
-
--   Ownership semantics
--   Borrow checker mechanics
--   Lifetime annotations
-````
-
-## 🔒 Compliance & Security
-
-### 🛡️ Audit Controls
-
-```bash
-# Dependency vetting
-uv pip list --format=freeze | safety check --stdin
-
-# SBOM Generation
-uv pip freeze --all | cyclonedx-py format
-```
-
-### 🔑 Security Protocol
-
-*   All AI interactions use TLS 1.3+
-*   Local file operations use strict umask (077)
-*   Temporary file wiping with DoD 5220.22-M standard
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
-
-**The copyright of the prompts used to generate the content of this project is reserved to Raphaël MANSUY.  This copyright is not covered by the Apache 2.0 License.**
-
----
-
-If you find this project helpful, please consider giving the [QuantaLogic Flow library](https://github.com/quantalogic/quantalogic) a star! ⭐
+Distributed under the MIT License. See `LICENSE` for more information.
