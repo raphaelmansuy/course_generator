@@ -8,7 +8,7 @@ packages = [{include = "ai_course_generator"}]
 
 [tool.poetry.dependencies]
 python = "^3.12"
-quantalogic = "^0.53.0"
+quantalogic = "^0.61.3"
 loguru = "^0.7.3"
 litellm = "^1.61.20"
 pydantic = "^2.10.6"
@@ -18,7 +18,7 @@ typer = "^0.15.2"
 rich = "^13.9.4"
 jinja2 = "^3.1.5"
 instructor = "^1.7.2"
-aiofiles = "^23.2.1"
+aiofiles = "^24.1.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
