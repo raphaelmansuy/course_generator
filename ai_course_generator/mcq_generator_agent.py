@@ -44,15 +44,19 @@ class MCQRequest(BaseModel):
         default={"memorization": 0.3, "comprehension": 0.4, "deep_understanding": 0.3},
         description="Distribution of question types (proportions must sum to 1): memorization, comprehension, deep_understanding"
     )
+    correct_answer_mode_distribution: dict = Field(
+        default={"single": 1.0, "multiple": 0.0},
+        description="Distribution of single vs multiple correct answer questions (proportions must sum to 1)"
+    )
 
 class KeyConcepts(BaseModel):
     """Model for key concepts extracted from a topic."""
     concepts: List[str] = Field(..., description="List of key concepts related to the topic")
 
 class QuestionWithAnswer(BaseModel):
-    """Intermediate model for a question and its correct answer."""
+    """Intermediate model for a question and its correct answers."""
     question: str
-    correct_answer: str
+    correct_answers: List[str]  # List of correct answer texts
 
 class Distractors(BaseModel):
     """Intermediate model for distractor options."""
@@ -62,18 +66,19 @@ class MCQItem(BaseModel):
     """Model for a complete MCQ item."""
     question: str
     options: List[str]
-    correct_answer: int  # 1-based index
+    correct_answers: List[int]  # List of 1-based indices
     explanation: str = ""  # Populated with detailed explanation
     key_concept: str = Field("", description="The key concept this question relates to")
     question_type: str = Field("", description="Type of question: memorization, comprehension, deep_understanding")
+    question_type_mode: str = Field("single", description="Mode of correct answers: single or multiple")
 
 class Explanation(BaseModel):
     """Model for the explanation of an MCQ item."""
     explanation: str
 
-# === Helper Function ===
+# === Helper Functions ===
 def assign_question_types(num_questions: int, distribution: dict) -> List[str]:
-    """Assign question types based on the given distribution."""
+    """Assign question types or answer modes based on the given distribution."""
     types = list(distribution.keys())
     probs = list(distribution.values())
     assignments = random.choices(types, weights=probs, k=num_questions)
@@ -92,12 +97,18 @@ async def validate_input(request: MCQRequest) -> MCQRequest:
         raise ValueError("Number of options must be at least 2")
     if not request.output_formats:
         raise ValueError("At least one output format must be specified")
-    total_proportion = sum(request.question_type_distribution.values())
-    if abs(total_proportion - 1.0) > 0.01:
+    total_qtype_proportion = sum(request.question_type_distribution.values())
+    if abs(total_qtype_proportion - 1.0) > 0.01:
         raise ValueError("Question type proportions must sum to 1.0")
-    valid_types = {"memorization", "comprehension", "deep_understanding"}
-    if set(request.question_type_distribution.keys()) != valid_types:
-        raise ValueError(f"Question types must be {valid_types}")
+    valid_qtypes = {"memorization", "comprehension", "deep_understanding"}
+    if set(request.question_type_distribution.keys()) != valid_qtypes:
+        raise ValueError(f"Question types must be {valid_qtypes}")
+    total_mode_proportion = sum(request.correct_answer_mode_distribution.values())
+    if abs(total_mode_proportion - 1.0) > 0.01:
+        raise ValueError("Correct answer mode proportions must sum to 1.0")
+    valid_modes = {"single", "multiple"}
+    if set(request.correct_answer_mode_distribution.keys()) != valid_modes:
+        raise ValueError(f"Correct answer modes must be {valid_modes}")
     return request
 
 @Nodes.structured_llm_node(
@@ -115,7 +126,7 @@ async def extract_key_concepts(topic: str, difficulty: str, model: str) -> KeyCo
 
 @Nodes.define(output=None)
 async def initialize_mcq_generation(request: MCQRequest, key_concepts: KeyConcepts) -> dict:
-    """Initialize the context for MCQ generation with key concepts and question types."""
+    """Initialize the context for MCQ generation with key concepts, question types, and answer modes."""
     logger.info("Initializing MCQ generation")
     num_questions = request.num_questions
     concepts = key_concepts.concepts
@@ -124,6 +135,7 @@ async def initialize_mcq_generation(request: MCQRequest, key_concepts: KeyConcep
     for i in range(num_questions % len(concepts)):
         questions_per_concept[i] += 1
     question_types = assign_question_types(num_questions, request.question_type_distribution)
+    answer_modes = assign_question_types(num_questions, request.correct_answer_mode_distribution)
     return {
         "topic": request.topic,
         "difficulty": request.difficulty,
@@ -137,9 +149,11 @@ async def initialize_mcq_generation(request: MCQRequest, key_concepts: KeyConcep
         "key_concepts": concepts,
         "questions_per_concept": questions_per_concept,
         "question_types": question_types,
+        "answer_modes": answer_modes,
         "current_concept_index": 0,
         "progress_task": None,  # Placeholder for progress bar task ID
-        "question_type_distribution": request.question_type_distribution  # Added for metadata
+        "question_type_distribution": request.question_type_distribution,
+        "correct_answer_mode_distribution": request.correct_answer_mode_distribution
     }
 
 @Nodes.structured_llm_node(
@@ -147,16 +161,17 @@ async def initialize_mcq_generation(request: MCQRequest, key_concepts: KeyConcep
     output="question_with_answer",
     response_model=QuestionWithAnswer,
     prompt_template="""
-Generate a multiple-choice question of type '{{ question_type }}' on the specific concept '{{ current_concept }}' within the topic '{{ topic }}' at the {{ difficulty }} level. Provide the question and the correct answer.
+Generate a multiple-choice question of type '{{ question_type }}' on the specific concept '{{ current_concept }}' within the topic '{{ topic }}' at the {{ difficulty }} level. The question should have {{ question_type_mode }} correct answer(s). Provide the question and a list of {{ num_correct_answers }} correct answers.
 
 - For 'memorization', create a question that tests recall of facts, definitions, or specific details.
 - For 'comprehension', create a question that tests understanding, such as explaining concepts or identifying main ideas.
 - For 'deep_understanding', create a scenario-based question that requires applying knowledge, analyzing situations, or evaluating options.
+- If 'multiple', ensure the correct answers are distinct but related to the concept.
 """,
     max_tokens=1000
 )
-async def generate_question(topic: str, difficulty: str, model: str, current_concept: str, question_type: str) -> QuestionWithAnswer:
-    """Generate a question and its correct answer for a specific concept and question type using an LLM."""
+async def generate_question(topic: str, difficulty: str, model: str, current_concept: str, question_type: str, question_type_mode: str, num_correct_answers: int) -> QuestionWithAnswer:
+    """Generate a question and its correct answers for a specific concept and question type using an LLM."""
     pass  # Implementation handled by the decorator
 
 @Nodes.structured_llm_node(
@@ -164,27 +179,28 @@ async def generate_question(topic: str, difficulty: str, model: str, current_con
     output="distractors",
     response_model=Distractors,
     prompt_template="""
-For the question: '{{ question }}' with correct answer: '{{ correct_answer }}', generate {{ num_distractors }} plausible distractors related to '{{ topic }}'.
+For the question: '{{ question }}' with correct answers: {{ correct_answers }}, generate {{ num_distractors }} plausible distractors related to '{{ topic }}'. Ensure distractors are distinct from all correct answers.
 """,
     max_tokens=1000
 )
-async def generate_distractors(question: str, correct_answer: str, num_distractors: int, topic: str, model: str) -> Distractors:
+async def generate_distractors(question: str, correct_answers: List[str], num_distractors: int, topic: str, model: str) -> Distractors:
     """Generate distractors for the question using an LLM."""
     pass  # Implementation handled by the decorator
 
 @Nodes.define(output="mcq_item")
-async def create_mcq_item(question_with_answer: QuestionWithAnswer, distractors: Distractors, current_concept: str, question_type: str) -> MCQItem:
-    """Create an MCQ item by combining the question, correct answer, distractors, key concept, and question type."""
+async def create_mcq_item(question_with_answer: QuestionWithAnswer, distractors: Distractors, current_concept: str, question_type: str, question_type_mode: str) -> MCQItem:
+    """Create an MCQ item by combining the question, correct answers, distractors, key concept, and question type."""
     logger.debug(f"Creating MCQ item for question: {question_with_answer.question}")
-    options = [question_with_answer.correct_answer] + distractors.distractors
+    options = question_with_answer.correct_answers + distractors.distractors
     random.shuffle(options)
-    correct_index = options.index(question_with_answer.correct_answer) + 1  # 1-based index
+    correct_indices = [options.index(ans) + 1 for ans in question_with_answer.correct_answers]  # 1-based indices
     return MCQItem(
         question=question_with_answer.question,
         options=options,
-        correct_answer=correct_index,
+        correct_answers=correct_indices,
         key_concept=current_concept,
-        question_type=question_type
+        question_type=question_type,
+        question_type_mode=question_type_mode
     )
 
 @Nodes.define(output="mcq_item")
@@ -193,23 +209,24 @@ async def validate_mcq_item(mcq_item: MCQItem) -> MCQItem:
     logger.debug(f"Validating MCQ item: {mcq_item.question}")
     if len(set(mcq_item.options)) != len(mcq_item.options):
         raise ValueError(f"Duplicate options in MCQ item: {mcq_item.question}")
-    if mcq_item.correct_answer < 1 or mcq_item.correct_answer > len(mcq_item.options):
-        raise ValueError(f"Invalid correct answer index for: {mcq_item.question}")
+    for idx in mcq_item.correct_answers:
+        if idx < 1 or idx > len(mcq_item.options):
+            raise ValueError(f"Invalid correct answer index {idx} for: {mcq_item.question}")
     return mcq_item
 
 @Nodes.define(output=None)
 async def prepare_explanation_inputs(mcq_item: MCQItem) -> dict:
     """Prepare inputs for generating the explanation."""
     letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']  # Support up to 10 options
-    correct_index = mcq_item.correct_answer - 1  # Convert to 0-based index
-    correct_letter = letters[correct_index]
-    correct_option = mcq_item.options[correct_index]
+    correct_indices = [idx - 1 for idx in mcq_item.correct_answers]  # Convert to 0-based indices
+    correct_letters = ", ".join([letters[idx] for idx in correct_indices])
+    correct_options = ", ".join([mcq_item.options[idx] for idx in correct_indices])
     formatted_options = "\n".join([f"{letters[i]}. {opt}" for i, opt in enumerate(mcq_item.options)])
-    logger.debug(f"Prepared explanation inputs for '{mcq_item.question}': correct_letter={correct_letter}, correct_option={correct_option}")
+    logger.debug(f"Prepared explanation inputs for '{mcq_item.question}': correct_letters={correct_letters}, correct_options={correct_options}")
     return {
         "formatted_options": formatted_options,
-        "correct_letter": correct_letter,
-        "correct_option": correct_option
+        "correct_letters": correct_letters,
+        "correct_options": correct_options
     }
 
 @Nodes.structured_llm_node(
@@ -222,25 +239,14 @@ Here is a multiple-choice question: '{{ question }}'
 Options:
 {{ formatted_options }}
 
-The correct answer is option {{ correct_letter }}, which is '{{ correct_option }}'.
+The correct answers are: {{ correct_letters }} ({{ correct_options }}).
 
-Provide a detailed explanation (at least 100 words) for why this is the correct answer and why each of the other options is incorrect. Use the actual option letters (e.g., A, B, C) and their text in your explanation. Do not include placeholders like '{correct_letter}' or '{explanation}' in your response—use the provided values directly.
+Provide a detailed explanation (at least 100 words) for why these are the correct answers and why each of the other options is incorrect. Use the actual option letters (e.g., A, B, C) and their text in your explanation. Do not include placeholders like '{correct_letters}' or '{explanation}' in your response—use the provided values directly.
 """,
     max_tokens=1000
 )
-async def generate_explanation(question: str, formatted_options: str, correct_letter: str, correct_option: str, model: str) -> Explanation:
+async def generate_explanation(question: str, formatted_options: str, correct_letters: str, correct_options: str, model: str) -> Explanation:
     """Generate an explanation for the MCQ using an LLM."""
-    rendered_prompt = f"""
-Here is a multiple-choice question: '{question}'
-
-Options:
-{formatted_options}
-
-The correct answer is option {correct_letter}, which is '{correct_option}'.
-
-Provide a detailed explanation (at least 100 words) for why this is the correct answer and why each of the other options is incorrect. Use the actual option letters (e.g., A, B, C) and their text in your explanation. Do not include placeholders like '{{correct_letter}}' or '{{explanation}}' in your response—use the provided values directly.
-"""
-    logger.debug(f"Rendered prompt for explanation generation:\n{rendered_prompt}")
     pass  # Implementation handled by the decorator
 
 @Nodes.define(output="mcq_item")
@@ -272,7 +278,8 @@ async def save_mcqs(
     num_questions: int,
     num_options: int,
     model_name: str,
-    question_type_distribution: dict
+    question_type_distribution: dict,
+    correct_answer_mode_distribution: dict
 ) -> None:
     """Save the MCQ items to files in the specified formats with metadata."""
     logger.info(f"Saving {len(mcq_items)} MCQs to {target_directory}")
@@ -285,7 +292,8 @@ async def save_mcqs(
         "num_questions": num_questions,
         "num_options": num_options,
         "model_name": model_name,
-        "question_type_distribution": question_type_distribution
+        "question_type_distribution": question_type_distribution,
+        "correct_answer_mode_distribution": correct_answer_mode_distribution
     }
 
     for fmt in output_formats:
@@ -308,6 +316,9 @@ async def save_mcqs(
                 f.write("- **Question Type Distribution**:\n")
                 for qtype, prop in question_type_distribution.items():
                     f.write(f"  - {qtype.capitalize()}: {prop * 100:.0f}%\n")
+                f.write("- **Correct Answer Mode Distribution**:\n")
+                for mode, prop in correct_answer_mode_distribution.items():
+                    f.write(f"  - {mode.capitalize()}: {prop * 100:.0f}%\n")
                 f.write("\n---\n\n")
 
                 # Write MCQs
@@ -316,11 +327,12 @@ async def save_mcqs(
                     f.write(f"{idx}. **Question**: {item.question}\n\n")
                     for opt_idx, opt in enumerate(item.options):
                         f.write(f"   - {chr(65 + opt_idx)}. {opt}\n")
-                    correct_letter = chr(65 + item.correct_answer - 1)
-                    f.write(f"\n   **Correct Answer**: {correct_letter}\n")
+                    correct_letters = ", ".join([chr(65 + i - 1) for i in item.correct_answers])
+                    f.write(f"\n   **Correct Answer(s)**: {correct_letters}\n")
                     f.write(f"   **Explanation**: {item.explanation}\n")
                     f.write(f"   **Key Concept**: {item.key_concept}\n")
-                    f.write(f"   **Question Type**: {item.question_type}\n\n")
+                    f.write(f"   **Question Type**: {item.question_type}\n")
+                    f.write(f"   **Answer Mode**: {item.question_type_mode}\n\n")
         elif fmt == "csv":
             logger.warning(f"CSV format not implemented yet: {file_path}")
         else:
@@ -376,12 +388,14 @@ def create_mcq_workflow() -> Workflow:
         "difficulty": "difficulty",
         "model": "model",
         "current_concept": lambda ctx: ctx["key_concepts"][ctx["current_concept_index"]],
-        "question_type": lambda ctx: ctx["question_types"][ctx["current_index"]]
+        "question_type": lambda ctx: ctx["question_types"][ctx["current_index"]],
+        "question_type_mode": lambda ctx: ctx["answer_modes"][ctx["current_index"]],
+        "num_correct_answers": lambda ctx: 1 if ctx["answer_modes"][ctx["current_index"]] == "single" else 2
     }
     wf.node_input_mappings["generate_distractors"] = {
         "question": lambda ctx: ctx["question_with_answer"].question,
-        "correct_answer": lambda ctx: ctx["question_with_answer"].correct_answer,
-        "num_distractors": lambda ctx: ctx["num_options"] - 1,
+        "correct_answers": lambda ctx: ctx["question_with_answer"].correct_answers,
+        "num_distractors": lambda ctx: ctx["num_options"] - len(ctx["question_with_answer"].correct_answers),
         "topic": "topic",
         "model": "model"
     }
@@ -389,15 +403,16 @@ def create_mcq_workflow() -> Workflow:
         "question_with_answer": "question_with_answer",
         "distractors": "distractors",
         "current_concept": lambda ctx: ctx["key_concepts"][ctx["current_concept_index"]],
-        "question_type": lambda ctx: ctx["question_types"][ctx["current_index"]]
+        "question_type": lambda ctx: ctx["question_types"][ctx["current_index"]],
+        "question_type_mode": lambda ctx: ctx["answer_modes"][ctx["current_index"]]
     }
     wf.node_input_mappings["validate_mcq_item"] = {"mcq_item": "mcq_item"}
     wf.node_input_mappings["prepare_explanation_inputs"] = {"mcq_item": "mcq_item"}
     wf.node_input_mappings["generate_explanation"] = {
         "question": lambda ctx: ctx["mcq_item"].question,
         "formatted_options": "formatted_options",
-        "correct_letter": "correct_letter",
-        "correct_option": "correct_option",
+        "correct_letters": "correct_letters",
+        "correct_options": "correct_options",
         "model": "model"
     }
     wf.node_input_mappings["set_explanation"] = {
@@ -418,7 +433,8 @@ def create_mcq_workflow() -> Workflow:
         "num_questions": "num_questions",
         "num_options": "num_options",
         "model_name": "model",
-        "question_type_distribution": "question_type_distribution"
+        "question_type_distribution": "question_type_distribution",
+        "correct_answer_mode_distribution": "correct_answer_mode_distribution"
     }
     
     logger.debug("Workflow nodes registered: %s", wf._nodes.keys() if hasattr(wf, '_nodes') else "Unknown")
@@ -480,7 +496,9 @@ def generate(
     batch_size: int = typer.Option(5, help="Batch size (for future use)"),
     memorization: float = typer.Option(0.3, help="Proportion of memorization questions (0.0 to 1.0)"),
     comprehension: float = typer.Option(0.4, help="Proportion of comprehension questions (0.0 to 1.0)"),
-    deep_understanding: float = typer.Option(0.3, help="Proportion of deep understanding questions (0.0 to 1.0)")
+    deep_understanding: float = typer.Option(0.3, help="Proportion of deep understanding questions (0.0 to 1.0)"),
+    single: float = typer.Option(0.5, help="Proportion of single correct answer questions (0.0 to 1.0)"),
+    multiple: float = typer.Option(0.5, help="Proportion of multiple correct answer questions (0.0 to 1.0)")
 ):
     """Generate MCQs and save them to the specified directory. Enters interactive mode if parameters are omitted."""
     try:
@@ -551,12 +569,30 @@ def generate(
                 default=deep_understanding,
                 show_default=True
             )
+            single = typer.prompt(
+                "Enter the proportion of single correct answer questions (0.0 to 1.0)",
+                type=float,
+                default=single,
+                show_default=True
+            )
+            multiple = typer.prompt(
+                "Enter the proportion of multiple correct answer questions (0.0 to 1.0)",
+                type=float,
+                default=multiple,
+                show_default=True
+            )
 
         # Validate question type proportions
-        total_proportion = memorization + comprehension + deep_understanding
-        if abs(total_proportion - 1.0) > 0.01:
+        total_qtype_proportion = memorization + comprehension + deep_understanding
+        if abs(total_qtype_proportion - 1.0) > 0.01:
             console.print("[red]Error: Question type proportions must sum to 1.0[/red]")
             raise ValueError("Question type proportions must sum to 1.0")
+
+        # Validate correct answer mode proportions
+        total_mode_proportion = single + multiple
+        if abs(total_mode_proportion - 1.0) > 0.01:
+            console.print("[red]Error: Correct answer mode proportions must sum to 1.0[/red]")
+            raise ValueError("Correct answer mode proportions must sum to 1.0")
 
         # Create the MCQRequest object
         request = MCQRequest(
@@ -572,6 +608,10 @@ def generate(
                 "memorization": memorization,
                 "comprehension": comprehension,
                 "deep_understanding": deep_understanding
+            },
+            correct_answer_mode_distribution={
+                "single": single,
+                "multiple": multiple
             }
         )
 

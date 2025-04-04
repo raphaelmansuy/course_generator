@@ -2,80 +2,185 @@
   "metadata": {
     "topic": "MIPS Assembly",
     "difficulty": "advanced",
-    "num_questions": 5,
+    "num_questions": 10,
     "num_options": 4,
     "model_name": "gemini/gemini-2.0-flash",
     "question_type_distribution": {
       "memorization": 0.3,
       "comprehension": 0.4,
       "deep_understanding": 0.3
+    },
+    "correct_answer_mode_distribution": {
+      "single": 0.5,
+      "multiple": 0.5
     }
   },
   "mcqs": [
     {
-      "question": "In MIPS assembly, which of the following statements best explains the advantage of using registers over memory?",
+      "question": "Which MIPS register is hard-wired to the value 0?",
       "options": [
-        "Registers are used for storing the operating system.",
-        "Registers allow direct access by multiple programs simultaneously.",
-        "Registers provide larger storage capacity than memory.",
-        "Registers are faster to access than memory."
+        "$zero",
+        "$v0",
+        "$at",
+        "$sp"
       ],
-      "correct_answer": 4,
-      "explanation": "Option D is correct because registers are small storage locations within the CPU itself, allowing for much faster data access compared to accessing memory, which is located outside the CPU. The speed difference is due to the shorter distance the data needs to travel and the simpler addressing mechanism. Now, let's examine why the other options are incorrect. Option A, 'Registers are used for storing the operating system,' is incorrect because the operating system is stored in memory, not registers. Registers are used for actively processing data and instructions. Option B, 'Registers allow direct access by multiple programs simultaneously,' is incorrect because registers are typically allocated to a single program or thread at a time. Concurrent access to registers would lead to data corruption and conflicts. Option C, 'Registers provide larger storage capacity than memory,' is incorrect because registers are much smaller in capacity compared to memory (RAM). Memory is designed to store large amounts of data, while registers are designed for speed and are therefore limited in size. Therefore, the only correct answer is D.",
+      "correct_answers": [
+        1
+      ],
+      "explanation": "The correct answer is A ($zero). The $zero register in MIPS is hard-wired to the value 0. It is frequently used as a source when you need a zero value without having to load it from memory. Option B ($v0) is incorrect because $v0 is used to store the return value of a function call. Option C ($at) is incorrect because $at is reserved for the assembler. Option D ($sp) is incorrect because $sp is the stack pointer, which points to the top of the stack in memory. ",
       "key_concept": "Registers",
-      "question_type": "comprehension"
+      "question_type": "memorization",
+      "question_type_mode": "single"
     },
     {
-      "question": "Which of the following best describes the primary role of the Instruction Set Architecture (ISA) in computer architecture?",
+      "question": "Which of the following statements accurately describe the use and characteristics of registers in MIPS assembly?",
       "options": [
-        "A high-level programming language used to write operating systems",
-        "A type of memory used for storing frequently accessed data",
-        "A standard protocol for communication between networked devices",
-        "Defines the set of instructions a processor can execute"
+        "Registers are limited in number, typically 32 in MIPS, requiring careful allocation by the programmer or compiler. ",
+        "Registers are used to store frequently accessed variables, reducing memory access time.",
+        "MIPS assembly uses a stack-based architecture for function calls and parameter passing.",
+        "MIPS registers are dynamically allocated during program execution by the operating system."
       ],
-      "correct_answer": 4,
-      "explanation": "The Instruction Set Architecture (ISA) is the fundamental interface between the hardware and software in a computer system. It defines the set of instructions that a processor can understand and execute. Therefore, option D, 'Defines the set of instructions a processor can execute,' is the correct answer. The ISA includes details such as the instruction formats, addressing modes, registers, and data types. It acts as an abstraction layer, allowing software to be written without needing to know the specific hardware implementation. Different processor families (e.g., x86, ARM) have different ISAs. Option A, 'A high-level programming language used to write operating systems,' is incorrect because while high-level languages are used for OS development, they are distinct from the ISA, which is a hardware-level concept. Option B, 'A type of memory used for storing frequently accessed data,' describes a cache, not the ISA. Option C, 'A standard protocol for communication between networked devices,' refers to networking protocols like TCP/IP, which are unrelated to the ISA's role in defining processor instructions. The ISA is specific to the processor's architecture, while networking protocols govern data transmission across networks.",
+      "correct_answers": [
+        2,
+        1
+      ],
+      "explanation": "Here's a detailed explanation of the correct answers and why the other options are incorrect:\n\n**Correct Answers:**\n\n*   **A. Registers are limited in number, typically 32 in MIPS, requiring careful allocation by the programmer or compiler.** This statement is accurate. MIPS architecture has a fixed number of registers (32 general-purpose registers). Because of this limitation, programmers or compilers must carefully manage register allocation to ensure efficient use of these resources. Failing to do so can lead to unnecessary memory access (spilling registers), which slows down program execution.\n*   **B. Registers are used to store frequently accessed variables, reducing memory access time.** This is also correct. Registers provide the fastest form of data storage and access within the CPU. By storing frequently used variables in registers, the processor can avoid the comparatively slow process of accessing data from main memory.\n\n**Incorrect Answers:**\n\n*   **C. MIPS assembly uses a stack-based architecture for function calls and parameter passing.** This statement is incorrect. MIPS is a register-based architecture, not a stack-based one. While a stack is used in MIPS for managing function calls and local variables, parameters are typically passed through registers (e.g., $a0-$a3) when possible. The stack is used more for saving return addresses, spilling registers, and allocating space for local variables that don't fit in registers.\n*   **D. MIPS registers are dynamically allocated during program execution by the operating system.** This is incorrect. While the operating system manages system resources, including memory, the allocation of MIPS registers is primarily determined at compile time or by the programmer. The compiler (or assembly programmer) decides which variables reside in which registers. The operating system might manage the use of certain registers for system calls or interrupt handling, but it doesn't dynamically allocate registers to general-purpose user programs during their execution in the way memory is dynamically allocated. Register allocation is largely a static process determined before and during compilation/assembly.",
+      "key_concept": "Registers",
+      "question_type": "comprehension",
+      "question_type_mode": "multiple"
+    },
+    {
+      "question": "Which of the following statements best describes the primary role of the Instruction Set Architecture (ISA) in the context of MIPS assembly language?",
+      "options": [
+        "The ISA primarily deals with optimizing the performance of MIPS assembly code through advanced compilation techniques.",
+        "The ISA handles interrupt requests and exceptions generated by the MIPS processor.",
+        "The ISA defines the interface between hardware and software, allowing different implementations of the same architecture to run the same code correctly. ",
+        "The ISA is responsible for managing memory allocation and deallocation during program execution in MIPS."
+      ],
+      "correct_answers": [
+        3
+      ],
+      "explanation": "Option C is correct because the Instruction Set Architecture (ISA) acts as a contract between the hardware and the software. It specifies the instructions that a processor can execute, the addressing modes, the register set, and the data types. This standardization allows different MIPS implementations (from different manufacturers or with varying performance characteristics) to execute the same MIPS assembly code correctly. As long as each implementation adheres to the ISA, software compatibility is maintained. Option A is incorrect because while compiler optimizations are important for performance, they are not the primary role of the ISA. The ISA defines *what* instructions can be executed, while compilation techniques determine *how* to best use those instructions. Option B is incorrect because interrupt handling and exception management are typically part of the processor's microarchitecture and operating system interaction, but not the ISA itself. The ISA may define instructions related to interrupt handling (e.g., enabling/disabling interrupts), but it doesn't handle the interrupt requests directly. Option D is incorrect because memory management (allocation and deallocation) is primarily the responsibility of the operating system and/or the runtime environment, not the ISA. The ISA provides instructions for accessing memory, but it doesn't dictate how memory is organized or managed. ",
       "key_concept": "Instruction Set Architecture (ISA)",
-      "question_type": "memorization"
+      "question_type": "deep_understanding",
+      "question_type_mode": "single"
     },
     {
-      "question": "In MIPS assembly, if you want to access a specific element in an array stored in memory, and you use the instruction `lw $t1, 8($t0)`, what is the role of the value '8' in this instruction?",
+      "question": "In MIPS assembly, if you load a word from memory address 0x1000, what would be the address of the next consecutive word in memory?",
       "options": [
-        "The offset is added to the base address in $t0 to access the desired memory location.",
-        "A constant value that is added to the value in register $t1.",
-        "The index of the element in the array.",
-        "The value stored at memory address 8."
+        "0x1002",
+        "0x1008",
+        "0x1001",
+        "In MIPS, memory addresses are byte addresses, and words are typically 4 bytes. To access consecutive words, the address increments by 4. Therefore, to access the next word after address 0x1000, the address should be 0x1004"
       ],
-      "correct_answer": 1,
-      "explanation": "The instruction `lw $t1, 8($t0)` in MIPS assembly is used to load a word from memory into register `$t1`. Let's break down why option A is correct and why the others are not:\n\n**A. The offset is added to the base address in $t0 to access the desired memory location.** This is the correct explanation. In this instruction, `$t0` holds the base address of the array (i.e., the memory address of the first element). The value `8` is an offset that is added to this base address to calculate the effective memory address from which the word will be loaded. So, the memory address accessed is `$t0 + 8`.\n\n**B. A constant value that is added to the value in register $t1.** This is incorrect. The value `8` is not added to the value in `$t1`. Instead, the value stored at the memory location `$t0 + 8` is loaded into `$t1`.\n\n**C. The index of the element in the array.** This is partially correct but can be misleading. While the offset is related to the index, it's not directly the index itself *unless* each element is one byte in size. In MIPS, an integer (word) typically occupies 4 bytes. If the array contains words, an offset of `8` would correspond to the *third* element (index 2), assuming the first element is at index 0, since the offset is in bytes. Therefore, it is more accurate to say it's an offset rather than the index.\n\n**D. The value stored at memory address 8.** This is incorrect. The instruction does not directly access memory address `8`. It accesses the memory address calculated by adding the value in `$t0` (the base address) and the offset `8`.\n\nTherefore, option A is the most accurate and complete explanation of the role of the value `8` in the given MIPS instruction. It correctly identifies `8` as an offset added to the base address stored in `$t0` to determine the memory location to access. ",
-      "key_concept": "Memory Addressing",
-      "question_type": "deep_understanding"
+      "correct_answers": [
+        4
+      ],
+      "explanation": "In MIPS assembly, memory is byte-addressed, meaning each byte in memory has a unique address. A 'word' in MIPS is typically 4 bytes (32 bits). Therefore, when you load a word from memory address 0x1000, the next consecutive word would start at an address 4 bytes higher.  Let's analyze the options:\n\nOption A (0x1002): This is incorrect because it only increments the address by 2 bytes. This would point to a location within the same word, not the start of the next word.\n\nOption B (0x1008): This is incorrect because it increments the address by 8 bytes. This would skip a word, pointing to the word after the next consecutive word.\n\nOption C (0x1001): This is incorrect because it increments the address by only 1 byte. This would point to the second byte of the current word, not the start of the next word.\n\nOption D (In MIPS, memory addresses are byte addresses, and words are typically 4 bytes. To access consecutive words, the address increments by 4. Therefore, to access the next word after address 0x1000, the address should be 0x1004): This is the correct answer. Since words are 4 bytes, the next consecutive word after 0x1000 would be at address 0x1000 + 4 = 0x1004.  The explanation accurately describes the byte-addressing scheme in MIPS and the size of a word, leading to the correct calculation.\n\n",
+      "key_concept": "Memory addressing",
+      "question_type": "comprehension",
+      "question_type_mode": "single"
     },
     {
-      "question": "Which statement best describes the role of assembly directives in MIPS assembly language?",
+      "question": "Which of the following statements are true regarding assembly directives in MIPS assembly language?",
       "options": [
-        "Directives do not produce machine code and guide the assembler during the assembly process.",
-        "Directives are optional and do not affect the assembly process.",
-        "Directives are translated directly into executable machine code.",
-        "Directives are executed by the CPU during program runtime."
+        "They are part of the MIPS instruction set architecture.",
+        "They guide the assembler during the assembly process. ",
+        "They are instructions executed by the MIPS processor at runtime.",
+        "They do not translate into machine code."
       ],
-      "correct_answer": 1,
-      "explanation": "Option A is correct because assembly directives are instructions to the assembler itself, not instructions to be executed by the CPU at runtime. They control the assembly process, such as defining data segments, allocating memory, or specifying the starting point of the program. They do not translate into machine code. Option B is incorrect because directives are not optional; they play a crucial role in guiding the assembler and are often necessary for proper assembly. Option C is incorrect because directives are not translated into executable machine code. Instead, they instruct the assembler on how to assemble the code. Option D is incorrect because directives are not executed by the CPU during program runtime. They are only relevant during the assembly process and have no impact on the program's execution after it has been assembled and loaded into memory. Directives are essential for tasks such as defining constants, reserving memory locations, and structuring the assembly code, ensuring the assembler correctly translates the assembly code into machine code that the CPU can execute.",
-      "key_concept": "Assembly Directives",
-      "question_type": "comprehension"
+      "correct_answers": [
+        4,
+        2
+      ],
+      "explanation": "Let's analyze each option to determine the correct answers: \n\n**B. They guide the assembler during the assembly process.** This statement is correct. Assembly directives (also known as pseudo-ops) are special commands that provide instructions to the assembler. They control various aspects of the assembly process, such as memory allocation, data definition, and program organization. For example, directives like `.data`, `.text`, `.word`, and `.globl` tell the assembler how to handle specific data or code segments.\n\n**D. They do not translate into machine code.** This statement is also correct. Assembly directives are not part of the MIPS instruction set and are not directly executed by the processor. Instead, they are instructions for the assembler itself, and they disappear after the assembly process is complete. They don't have a corresponding machine code representation.\n\nNow let's examine the incorrect options:\n\n**A. They are part of the MIPS instruction set architecture.** This statement is incorrect. The MIPS instruction set architecture (ISA) defines the set of instructions that the MIPS processor can execute. Assembly directives are not part of this instruction set; they are commands for the assembler, not for the processor.\n\n**C. They are instructions executed by the MIPS processor at runtime.** This statement is incorrect. As mentioned earlier, assembly directives are not executed by the MIPS processor. They are instructions for the assembler and are processed during the assembly phase, not during runtime. The MIPS processor only executes instructions that have been translated into machine code, and directives do not translate into machine code. Therefore, options B and D are the correct answers because they accurately describe the role and behavior of assembly directives in MIPS assembly language. ",
+      "key_concept": "Assembly directives",
+      "question_type": "comprehension",
+      "question_type_mode": "multiple"
     },
     {
-      "question": "In MIPS assembly, how is a system call typically invoked?",
+      "question": "In the context of MIPS assembly, explain the role of system calls and why they are essential for program execution. Provide a scenario where a system call is indispensable. ",
       "options": [
-        "A system call is requested by placing the appropriate code in $v0 and using the syscall instruction.",
-        "A jump to a specific memory location is performed.",
-        "An interrupt is raised, handled by the operating system.",
-        "The program counter is set to the address of the system call handler."
+        "System calls in MIPS assembly are used to directly manipulate hardware components, such as the CPU registers and memory modules, giving programmers low-level control over the system's resources.",
+        "System calls in MIPS assembly are primarily used for debugging purposes, allowing developers to trace the execution flow and identify errors in their code. They are not essential for program execution but rather a development tool.",
+        "System calls in MIPS assembly are only necessary when dealing with floating-point arithmetic operations, as they provide the necessary functions for handling decimal numbers and performing complex calculations.",
+        "System calls provide an interface between user-level programs and the operating system kernel, allowing them to request services like I/O or memory allocation, which are essential for program execution in MIPS assembly environment. "
       ],
-      "correct_answer": 1,
-      "explanation": "Option A is correct because in MIPS assembly, a system call is invoked by first placing the system call code (a number that identifies the specific system call) into register $v0. Then, the syscall instruction is executed. This instruction causes a trap, which transfers control to the operating system's kernel. The kernel then uses the value in $v0 to determine which system call to execute. Options B, C, and D are incorrect. Option B suggests that a jump to a specific memory location is performed. While system calls eventually involve the kernel executing code at a specific memory location, the initial invocation is not a direct jump but rather a controlled transfer of execution via the syscall instruction. Option C proposes that an interrupt is raised. While the syscall instruction does cause a trap, which is a type of interrupt, the phrasing is not precise enough regarding the crucial role of the $v0 register. Option D states that the program counter is set to the address of the system call handler. Again, while the program counter eventually points to the system call handler, this is a consequence of the syscall instruction, not the direct method of initiating the system call. The value in $v0 is essential for the OS to know *which* system call to handle.",
-      "key_concept": "System Calls",
-      "question_type": "comprehension"
+      "correct_answers": [
+        4
+      ],
+      "explanation": "Option D is correct because system calls in MIPS (and other architectures) are the fundamental way that a user program requests services from the operating system kernel. These services include essential functions like input/output (e.g., reading from the keyboard or writing to the screen), memory allocation, and file system access. Without system calls, a user program would be isolated and unable to interact with the outside world or manage its resources effectively. A scenario where a system call is indispensable is when a program needs to print output to the console; this requires a system call to the operating system to display the text. Option A is incorrect because while system calls do interact with the system's resources, they do not directly manipulate hardware components. The operating system kernel handles the direct manipulation of hardware, providing a layer of abstraction for user-level programs. Option B is incorrect because system calls are essential for program execution, not just for debugging. While debuggers might use system calls, their primary purpose is to provide necessary services for all programs. Option C is incorrect because system calls are not only necessary for floating-point arithmetic. They are used for a wide range of operations, including I/O, memory management, and process control, which are fundamental to almost any program, regardless of whether it uses floating-point numbers or not. ",
+      "key_concept": "System calls",
+      "question_type": "deep_understanding",
+      "question_type_mode": "single"
+    },
+    {
+      "question": "In MIPS assembly, which of the following statements accurately describe the responsibilities of the caller and callee in procedure calls regarding register usage and stack management?",
+      "options": [
+        "The callee is responsible for saving all registers to the stack before using them, and the caller restores them upon return.",
+        "The caller saves registers $t0-$t9 if they contain values needed after the call, and the callee saves registers $s0-$s7 if they will be used.",
+        "The callee saves the return address ($ra) to the stack if making another procedure call within itself.",
+        "The caller saves argument registers ($a0-$a3) if their values are needed after the call."
+      ],
+      "correct_answers": [
+        2,
+        4,
+        3
+      ],
+      "explanation": "Let's analyze each option to understand why B, C, and D are correct, and why A is incorrect. Option A states: 'The callee is responsible for saving all registers to the stack before using them, and the caller restores them upon return.' This is incorrect because it's not the callee's responsibility to save *all* registers. The callee only needs to save registers it intends to use that the caller might need later (specifically, the $s0-$s7 registers). The caller is responsible for saving temporary registers ($t0-$t9) if their values are needed after the function call. Option B states: 'The caller saves registers $t0-$t9 if they contain values needed after the call, and the callee saves registers $s0-$s7 if they will be used.' This is correct because it accurately describes the MIPS calling convention. The caller-saved registers ($t0-$t9) are the caller's responsibility to preserve if they need those values after the call. The callee-saved registers ($s0-$s7) are saved by the callee to maintain their values for the caller. Option C states: 'The callee saves the return address ($ra) to the stack if making another procedure call within itself.' This is correct. If the callee (a function) needs to call another function (i.e., it's a nested call), it will overwrite the return address in $ra. Therefore, it must save $ra on the stack before making the nested call and restore it before returning to its own caller. Option D states: 'The caller saves argument registers ($a0-$a3) if their values are needed after the call.' This is also correct. Although argument registers are often overwritten by the callee or subsequent calls within the caller, the caller must save these registers if the original values are required after the function call returns. Therefore, options B, C, and D accurately reflect the MIPS calling conventions regarding register usage and stack management during procedure calls, while option A does not. ",
+      "key_concept": "Procedure calls",
+      "question_type": "comprehension",
+      "question_type_mode": "single"
+    },
+    {
+      "question": "In MIPS assembly, which direction does the stack typically grow?",
+      "options": [
+        "Stack grows upwards, towards higher memory addresses",
+        "Stack grows horizontally, towards higher memory addresses",
+        "Stack grows downwards, towards lower memory addresses",
+        "Stack grows randomly"
+      ],
+      "correct_answers": [
+        3
+      ],
+      "explanation": "In MIPS assembly, the stack traditionally grows downwards. This means that as items are added to the stack, the stack pointer moves towards lower memory addresses. Option C, 'Stack grows downwards, towards lower memory addresses,' is therefore the correct answer. This design choice allows the stack to expand dynamically as needed, up to the point where it might collide with other memory segments like the heap. Option A, 'Stack grows upwards, towards higher memory addresses,' is incorrect because stacks in MIPS (and many other architectures) are designed to grow downwards. Growing upwards would mean the stack pointer increases with each push, which is the opposite of how stacks are conventionally implemented. Option B, 'Stack grows horizontally, towards higher memory addresses,' is incorrect as memory addresses are linear, not horizontal. The stack grows linearly within the memory space. Option D, 'Stack grows randomly,' is also incorrect because stack growth follows aLast-In, First-Out (LIFO) order and a predictable direction (downwards), not a random pattern. Random growth would make stack management impossible, leading to unpredictable program behavior and memory corruption. Therefore, the stack's organized, downward growth is crucial for proper function calls, local variable storage, and overall program stability in MIPS assembly.",
+      "key_concept": "Stack implementation",
+      "question_type": "memorization",
+      "question_type_mode": "single"
+    },
+    {
+      "question": "Which of the following statements are true regarding interrupt handling in MIPS assembly?",
+      "options": [
+        "It automatically switches to kernel mode, regardless of the privilege level of the interrupted program.",
+        "It saves the return address in the EPC register.",
+        "It disables interrupts during the execution of the handler to prevent nesting issues by default, but this can be changed in software by modifying the Status register to re-enable nested interrupts if required. ",
+        "It uses a dedicated stack pointer for interrupt handling, separate from the user stack pointer."
+      ],
+      "correct_answers": [
+        2,
+        3
+      ],
+      "explanation": "Let's analyze each option to determine the correct answers regarding interrupt handling in MIPS assembly. \n\nOption A states: 'It automatically switches to kernel mode, regardless of the privilege level of the interrupted program.' This statement is partially correct. Interrupts *do* cause a switch to kernel mode to allow the OS to handle the interrupt safely. However, the phrase \"regardless of the privilege level of the interrupted program\" is what makes it incorrect. The switch to kernel mode is a *necessary* part of the interrupt handling process to ensure system stability and security. It isn't just a consequence of the interrupted program's privilege level. So, while the transition to kernel mode is true, the reasoning provided in the option is not entirely accurate in describing the fundamental reason for the switch.\n\nOption B states: 'It saves the return address in the EPC register.' This is correct. The EPC (Exception Program Counter) register stores the address to which the program should return after the interrupt handler has finished its execution. This is crucial for resuming the interrupted program seamlessly.\n\nOption C states: 'It disables interrupts during the execution of the handler to prevent nesting issues by default, but this can be changed in software by modifying the Status register to re-enable nested interrupts if required.' This is also correct. MIPS, by default, disables interrupts when an interrupt handler is entered. This prevents nested interrupts, which can complicate interrupt handling. However, the Status register can be modified to re-enable interrupts within the handler, allowing for nested interrupt handling if desired. \n\nOption D states: 'It uses a dedicated stack pointer for interrupt handling, separate from the user stack pointer.' This is incorrect. While it's common (and good practice) for operating systems to use a separate stack for interrupt handling to prevent potential stack overflows from user programs, MIPS architecture itself doesn't *mandate* a dedicated stack pointer. The OS is responsible for setting up and switching to a different stack, typically the kernel stack, when an interrupt occurs. The hardware doesn't automatically switch to a separate stack using a dedicated stack pointer. Therefore, this statement is not universally true for MIPS interrupt handling.\n\nTherefore, the correct answers are B and C.\n",
+      "key_concept": "Interrupt handling",
+      "question_type": "memorization",
+      "question_type_mode": "multiple"
+    },
+    {
+      "question": "Which of the following statements are true regarding pipelining in MIPS architecture?",
+      "options": [
+        "MIPS assembly code is directly executable by the processor without translation.",
+        "Pipelining increases instruction throughput.",
+        "Pipelining reduces the execution time of a single instruction compared to a non-pipelined processor, but it can improve the overall performance by overlapping the execution of multiple instructions",
+        "In MIPS assembly, branch instructions always jump to a fixed address."
+      ],
+      "correct_answers": [
+        2,
+        3
+      ],
+      "explanation": "Here's a breakdown of why options B and C are correct, and why A and D are incorrect regarding pipelining in MIPS architecture:\n\n**B. Pipelining increases instruction throughput.** This statement is **correct**. Pipelining allows multiple instructions to be in different stages of execution simultaneously. While the latency (time for a single instruction to complete) might not decrease, the number of instructions completed per unit of time (throughput) increases significantly.\n\n**C. Pipelining reduces the execution time of a single instruction compared to a non-pipelined processor, but it can improve the overall performance by overlapping the execution of multiple instructions.** This statement is also **correct**. Pipelining doesn't actually *reduce* the time it takes to complete a single instruction; in fact, it might slightly increase it due to overhead. However, the key benefit is the *overlapping* of instruction execution. By starting a new instruction before the previous one finishes, the overall performance (number of instructions completed in a given time) is improved. This is because multiple instructions are in progress concurrently.\n\n**A. MIPS assembly code is directly executable by the processor without translation.** This statement is **incorrect**. MIPS assembly code is a human-readable representation of machine instructions. It needs to be translated into machine code (binary) by an assembler before the processor can execute it. The processor directly executes machine code, not assembly code.\n\n**D. In MIPS assembly, branch instructions always jump to a fixed address.** This statement is **incorrect**. Branch instructions in MIPS can jump to a fixed address (absolute addressing), but more commonly they jump to an address relative to the Program Counter (PC-relative addressing). This allows for more flexible and position-independent code. Branch instructions use an offset that is added to the current PC to determine the target address; this offset can be positive or negative, enabling jumps forward or backward in the code. So, branch instructions do not *always* jump to a fixed address; they often jump to a relative address. ",
+      "key_concept": "Pipelining",
+      "question_type": "deep_understanding",
+      "question_type_mode": "multiple"
     }
   ]
 }

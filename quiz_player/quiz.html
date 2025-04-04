@@ -73,12 +73,14 @@
       font-weight: 700;
     }
     
-    input[type="radio"]:checked + .option-label {
+    input[type="radio"]:checked + .option-label,
+    input[type="checkbox"]:checked + .option-label {
       border-color: var(--accent);
       background-color: var(--accent-light);
     }
     
-    input[type="radio"]:checked + .option-label .option-marker {
+    input[type="radio"]:checked + .option-label .option-marker,
+    input[type="checkbox"]:checked + .option-label .option-marker {
       background-color: var(--accent);
       color: white;
     }
@@ -373,7 +375,7 @@
   <div id="inputPage" class="container mx-auto p-4 max-w-2xl fade-in">
     <div class="card slide-up">
       <h2 class="text-2xl font-bold mb-4">Create Your Quiz</h2>
-      <p class="mb-4 text-gray-600">Enter a JSON object with <code>'metadata'</code> (topic, difficulty) and <code>'mcqs'</code> (array of questions with options, correct_answer, explanation).</p>
+      <p class="mb-4 text-gray-600">Enter a JSON object with <code>'metadata'</code> (topic, difficulty) and <code>'mcqs'</code> (array of questions with options, correct_answers, explanation).</p>
       <textarea id="jsonInput" class="w-full h-64 sm:h-80 p-3 border rounded font-mono text-sm resize-y" placeholder="Paste your JSON here (e.g., {'metadata': ..., 'mcqs': [...]})"></textarea>
       <div class="flex justify-between items-center mt-4">
         <button id="sampleJson" class="btn-text" aria-label="Load sample JSON">Load sample data</button>
@@ -388,7 +390,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h2 class="text-xl font-bold">Load Sample Quiz?</h2>
-        <button class="close-button" id="closeModal">&times;</button>
+        <button class="close-button" id="closeModal">×</button>
       </div>
       <p class="mb-4">This will replace any existing content in the text area with a simple 2-question Spanish quiz. Continue?</p>
       <div class="flex justify-end space-x-2">
@@ -419,7 +421,8 @@
       <h2 class="text-xl font-bold mb-2" id="quizTitle"></h2>
       <p id="progress" class="mb-4 text-sm text-gray-600 font-semibold"></p>
       
-      <div id="question" class="mb-6 text-xl font-bold"></div>
+      <div id="question" class="mb-2 text-xl font-bold"></div>
+      <div id="questionNote" class="mb-4 text-sm text-gray-600"></div>
       <div id="options" class="space-y-3"></div>
       
       <div id="feedback" class="mt-6 p-4 rounded-lg hidden slide-up"></div>
@@ -462,7 +465,7 @@
     let streakCount = 0;
     let confettiElements = [];
 
-    // Sample JSON data - kept small and simple
+    // Sample JSON data - updated to include a multi-answer question
     const sampleJson = JSON.stringify({
       "metadata": {
         "topic": "Basic Spanish",
@@ -472,14 +475,14 @@
         {
           "question": "How do you say 'hello' in Spanish?",
           "options": ["Adiós", "Gracias", "Hola", "Buenos días"],
-          "correct_answer": 3,
+          "correct_answers": [3],
           "explanation": "Hola is the most common way to say hello in Spanish."
         },
         {
-          "question": "What is the Spanish word for 'cat'?",
-          "options": ["Perro", "Gato", "Pájaro", "Ratón"],
-          "correct_answer": 2,
-          "explanation": "Gato is the Spanish word for cat."
+          "question": "Which of these are animals in Spanish?",
+          "options": ["Perro", "Gato", "Casa", "Ratón"],
+          "correct_answers": [1, 2, 4],
+          "explanation": "Perro (dog), Gato (cat), and Ratón (mouse) are animals; Casa (house) is not."
         }
       ]
     }, null, 2);
@@ -501,17 +504,14 @@
     closeModal.addEventListener('click', hideModal);
     cancelSample.addEventListener('click', hideModal);
     
-    // When clicking outside the modal content, close the modal
     modal.addEventListener('click', function(event) {
       if (event.target === modal) {
         hideModal();
       }
     });
     
-    // Load sample JSON - first show confirmation modal
     document.getElementById('sampleJson').addEventListener('click', showModal);
     
-    // Confirm loading sample
     confirmSample.addEventListener('click', () => {
       document.getElementById('jsonInput').value = sampleJson;
       hideModal();
@@ -523,6 +523,11 @@
         const json = JSON.parse(data);
         if (!json.metadata || !json.mcqs || !Array.isArray(json.mcqs)) {
           return false;
+        }
+        for (const mcq of json.mcqs) {
+          if (!mcq.question || !Array.isArray(mcq.options) || !Array.isArray(mcq.correct_answers) || !mcq.explanation) {
+            return false;
+          }
         }
         return json;
       } catch (e) {
@@ -542,7 +547,6 @@
         points = 0;
         streakCount = 0;
         
-        // Update hearts display
         updateHearts();
         
         document.getElementById('inputPage').classList.add('hidden');
@@ -550,7 +554,7 @@
         document.getElementById('quizTitle').textContent = `${mcqsData.metadata.topic} - ${mcqsData.metadata.difficulty}`;
         displayQuestion();
       } else {
-        document.getElementById('errorMessage').textContent = 'Invalid JSON format. Please ensure it includes "metadata" and "mcqs" fields.';
+        document.getElementById('errorMessage').textContent = 'Invalid JSON format. Please ensure it includes "metadata" and "mcqs" with "question", "options", "correct_answers", and "explanation" fields.';
       }
     });
 
@@ -573,7 +577,6 @@
       const pointsCounter = document.getElementById('pointsCounter');
       const currentPoints = parseInt(pointsCounter.textContent);
       
-      // Animate the points counter
       let step = 0;
       const stepsTotal = 20;
       const pointsToAdd = newPoints / stepsTotal;
@@ -592,28 +595,46 @@
     // Function to display the current question
     function displayQuestion() {
       const question = mcqsData.mcqs[currentQuestion];
+      const isMultipleAnswer = question.correct_answers.length > 1;
+
       document.getElementById('progress').textContent = `Question ${currentQuestion + 1} of ${mcqsData.mcqs.length}`;
       document.getElementById('progressBar').style.width = `${((currentQuestion + 1) / mcqsData.mcqs.length) * 100}%`;
       document.getElementById('question').textContent = question.question;
+      document.getElementById('questionNote').textContent = isMultipleAnswer ? '(Select all that apply)' : '';
 
       const optionsDiv = document.getElementById('options');
       optionsDiv.innerHTML = '';
 
-      // Create option radio buttons
       question.options.forEach((option, index) => {
         const div = document.createElement('div');
+        const inputType = isMultipleAnswer ? 'checkbox' : 'radio';
+        const nameAttr = isMultipleAnswer ? '' : 'name="option"';
         div.innerHTML = `
-          <input type="radio" name="option" id="opt${index}" class="hidden" value="${index}">
+          <input type="${inputType}" id="opt${index}" class="hidden" value="${index}" ${nameAttr}>
           <label for="opt${index}" class="option-label">
             <span class="option-marker">${String.fromCharCode(65 + index)}</span>
             <span>${option}</span>
           </label>
         `;
-        div.querySelector('input').addEventListener('change', () => checkAnswer(index));
         optionsDiv.appendChild(div);
       });
 
-      // Reset feedback and explanation
+      const checkButton = document.createElement('button');
+      checkButton.id = 'checkAnswer';
+      checkButton.className = 'btn btn-primary mt-4';
+      checkButton.textContent = 'Check Answer';
+      checkButton.disabled = true;
+      optionsDiv.appendChild(checkButton);
+
+      const inputs = document.querySelectorAll('#options input');
+      inputs.forEach(input => {
+        input.addEventListener('change', () => {
+          checkButton.disabled = !Array.from(inputs).some(inp => inp.checked);
+        });
+      });
+
+      checkButton.addEventListener('click', () => checkAnswer());
+
       document.getElementById('feedback').textContent = '';
       document.getElementById('feedback').classList.add('hidden');
       document.getElementById('explanation').textContent = '';
@@ -627,7 +648,6 @@
       const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
       const container = document.getElementById('mcqPage');
       
-      // Create 50 confetti elements
       for (let i = 0; i < 50; i++) {
         const confetti = document.createElement('div');
         confetti.className = 'confetti';
@@ -637,7 +657,6 @@
         container.appendChild(confetti);
         confettiElements.push(confetti);
         
-        // Animate the confetti
         const duration = 1000 + Math.random() * 2000;
         const keyframes = [
           { transform: `translate(0, 0) rotate(0deg)`, opacity: 1 },
@@ -650,7 +669,6 @@
           fill: 'forwards'
         });
         
-        // Remove the confetti element after animation
         setTimeout(() => {
           if (container.contains(confetti)) {
             container.removeChild(confetti);
@@ -661,63 +679,66 @@
     }
 
     // Function to check the selected answer
-    function checkAnswer(selectedIndex) {
+    function checkAnswer() {
       const question = mcqsData.mcqs[currentQuestion];
-      const correctIndex = question.correct_answer - 1;
-      const feedback = document.getElementById('feedback');
-      const explanation = document.getElementById('explanation');
-      const selectedLabel = document.querySelector(`label[for="opt${selectedIndex}"]`);
-      
-      // Record user answer
+      const isMultipleAnswer = question.correct_answers.length > 1;
+      let selectedIndices;
+
+      if (isMultipleAnswer) {
+        selectedIndices = Array.from(document.querySelectorAll('#options input[type="checkbox"]:checked'))
+          .map(input => parseInt(input.value));
+      } else {
+        const selectedRadio = document.querySelector('#options input[type="radio"]:checked');
+        selectedIndices = selectedRadio ? [parseInt(selectedRadio.value)] : [];
+      }
+
+      const correctIndices = question.correct_answers.map(i => i - 1); // Convert 1-based to 0-based
+      const isCorrect = selectedIndices.length === correctIndices.length &&
+        selectedIndices.every(index => correctIndices.includes(index));
+
       userAnswers.push({
         question: question.question,
-        userAnswer: selectedIndex,
-        correctAnswer: correctIndex,
+        userAnswer: selectedIndices,
+        correctAnswers: correctIndices,
         explanation: question.explanation
       });
 
+      const feedback = document.getElementById('feedback');
       feedback.classList.remove('hidden', 'bg-green-100', 'bg-red-100', 'border-green-400', 'border-red-400');
-      explanation.classList.remove('hidden');
-      
-      if (selectedIndex === correctIndex) {
-        // Correct answer
+      const explanation = document.getElementById('explanation');
+
+      if (isCorrect) {
         feedback.textContent = '✅ Correct! Great job!';
         feedback.classList.add('bg-green-100', 'border', 'border-green-400', 'p-4', 'rounded-lg');
-        selectedLabel.classList.add('feedback-correct');
+        document.querySelectorAll('#options input:checked + .option-label').forEach(label => {
+          label.classList.add('feedback-correct');
+        });
         score++;
-        
-        // Add streak bonus
         streakCount++;
         let pointsToAdd = 10;
-        
         if (streakCount >= 3) {
           pointsToAdd = 15;
           feedback.textContent = `✅ Correct! ${streakCount} in a row! 🔥`;
         }
-        
         updatePoints(pointsToAdd);
-        
-        // Show confetti for correct answers
         createConfetti();
       } else {
-        // Incorrect answer
-        feedback.textContent = `❌ Not quite! The correct answer was ${String.fromCharCode(65 + correctIndex)}.`;
+        feedback.textContent = `❌ Not quite! The correct answer(s) were: ${correctIndices.map(i => String.fromCharCode(65 + i)).join(', ')}.`;
         feedback.classList.add('bg-red-100', 'border', 'border-red-400', 'p-4', 'rounded-lg');
-        selectedLabel.classList.add('feedback-incorrect');
-        
-        // Reset streak
+        document.querySelectorAll('#options input:checked + .option-label').forEach(label => {
+          label.classList.add('feedback-incorrect');
+        });
         streakCount = 0;
-        
-        // Decrease hearts
         hearts--;
         updateHearts();
       }
       
       explanation.textContent = question.explanation;
+      explanation.classList.remove('hidden');
       explanation.classList.add('p-4', 'rounded-lg', 'bg-blue-50');
 
-      // Disable all option buttons after selection
       document.querySelectorAll('#options input').forEach(input => input.disabled = true);
+      document.getElementById('checkAnswer').disabled = true;
       document.getElementById('next').disabled = false;
     }
 
@@ -730,7 +751,6 @@
       const scoreElement = document.getElementById('score');
       scoreElement.textContent = `${score} out of ${mcqsData.mcqs.length} (${scorePercent}%)`;
       
-      // Set emoji and message based on score
       const resultsEmoji = document.getElementById('resultsEmoji');
       const scoreMessage = document.getElementById('scoreMessage');
       const xpEarned = document.getElementById('xpEarned');
@@ -750,20 +770,23 @@
       } else {
         resultsEmoji.textContent = '🔄';
         scoreMessage.textContent = 'Keep practicing! You\'ll get there.';
-        xpEarned.textContent = `+${points} XP earned! Don't give up!`;
+        xpEarned.textContent = `+${points} XP earned! Don\'t give up!`;
       }
       
       const feedbackSummary = document.getElementById('feedbackSummary');
       feedbackSummary.innerHTML = userAnswers.map((answer, i) => {
-        const isCorrect = answer.userAnswer === answer.correctAnswer;
+        const isCorrect = answer.userAnswer.length === answer.correctAnswers.length &&
+          answer.userAnswer.every(index => answer.correctAnswers.includes(index));
+        const userAnswerText = answer.userAnswer.map(i => String.fromCharCode(65 + i)).sort().join(', ') || 'None';
+        const correctAnswerText = answer.correctAnswers.map(i => String.fromCharCode(65 + i)).sort().join(', ');
         return `
           <div class="question-review ${isCorrect ? 'correct' : 'incorrect'}">
             <div class="flex items-start">
               <span class="mr-2 mt-1">${isCorrect ? '✅' : '❌'}</span>
               <div>
                 <p class="font-medium">Q${i+1}: ${answer.question}</p>
-                <p class="text-sm">Your answer: ${String.fromCharCode(65 + answer.userAnswer)} (${mcqsData.mcqs[i].options[answer.userAnswer]})</p>
-                ${!isCorrect ? `<p class="text-sm font-medium text-[var(--primary)]">Correct answer: ${String.fromCharCode(65 + answer.correctAnswer)} (${mcqsData.mcqs[i].options[answer.correctAnswer]})</p>` : ''}
+                <p class="text-sm">Your answer: ${userAnswerText}</p>
+                ${!isCorrect ? `<p class="text-sm font-medium text-[var(--primary)]">Correct answer: ${correctAnswerText}</p>` : ''}
                 <p class="mt-1 text-sm text-gray-600">${answer.explanation}</p>
               </div>
             </div>
@@ -800,14 +823,12 @@
     document.getElementById('shareResults').addEventListener('click', () => {
       const text = `I scored ${score}/${mcqsData.mcqs.length} on the ${mcqsData.metadata.topic} quiz! Try it yourself!`;
       
-      // Check if Web Share API is available
       if (navigator.share) {
         navigator.share({
           title: 'My LingLearn Quiz Results',
           text: text
         }).catch(console.error);
       } else {
-        // Fallback - copy to clipboard
         navigator.clipboard.writeText(text).then(() => {
           alert('Results copied to clipboard!');
         }).catch(console.error);
