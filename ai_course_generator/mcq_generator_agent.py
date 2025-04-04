@@ -48,7 +48,8 @@ class MCQRequest(BaseModel):
         default={"single": 1.0, "multiple": 0.0},
         description="Distribution of single vs multiple correct answer questions (proportions must sum to 1)"
     )
-    institution: Optional[str] = Field(None, description="Optional institution style: cambridge, oxford, ucl")
+    institution: Optional[str] = Field(None, description="Optional institution style (e.g., cambridge, oxford, ucl)")
+    is_computer_science: bool = Field(False, description="Whether the topic is related to computer science or programming")
 
 class KeyConcepts(BaseModel):
     """Model for key concepts extracted from a topic."""
@@ -157,7 +158,8 @@ async def initialize_mcq_generation(request: MCQRequest, key_concepts: KeyConcep
         "progress_task": None,  # Placeholder for progress bar task ID
         "question_type_distribution": request.question_type_distribution,
         "correct_answer_mode_distribution": request.correct_answer_mode_distribution,
-        "institution": request.institution
+        "institution": request.institution,
+        "is_computer_science": request.is_computer_science
     }
 
 @Nodes.structured_llm_node(
@@ -165,18 +167,20 @@ async def initialize_mcq_generation(request: MCQRequest, key_concepts: KeyConcep
     output="question_with_answer",
     response_model=QuestionWithAnswer,
     prompt_template="""
+You are an expert on the topic of '{{ topic }}'. {% if institution %}You are a professor at {{ institution }}.{% endif %}
+
 Generate a multiple-choice question of type '{{ question_type }}' on the specific concept '{{ current_concept }}' within the topic '{{ topic }}' at the {{ difficulty }} level. The question should have {{ question_type_mode }} correct answer(s). Provide the question and a list of {{ num_correct_answers }} correct answers.
 
 - For 'memorization', create a question that tests recall of facts, definitions, or specific details.
 - For 'comprehension', create a question that tests understanding by requiring the student to interpret, explain, or identify the main ideas related to the concept, rather than just recalling facts.
 - For 'deep_understanding', create a question that requires higher-order thinking, such as applying the concept to a new situation, analyzing its implications, evaluating different approaches, or synthesizing information from multiple sources. The question should be challenging and reflect the rigor expected at institutions like Cambridge, Oxford, or UCL. Where appropriate, incorporate real-world scenarios, case studies, or data interpretation (e.g., graphs, tables) to add complexity.
 
-{% if institution == 'cambridge' %}
-Ensure the question requires precise mathematical reasoning or calculations where appropriate.
-{% elif institution == 'oxford' %}
-Design a thought-provoking question that explores nuanced aspects of the concept, encouraging deep discussion.
-{% elif institution == 'ucl' %}
-Incorporate research-oriented elements, such as interpreting experimental data or referencing contemporary issues in the topic.
+{% if is_computer_science %}
+For computer science or programming topics, consider including examples of code where appropriate to illustrate concepts or test understanding of syntax, logic, or algorithms.
+{% endif %}
+
+{% if institution %}
+Generate the question in the style typical of {{ institution }}.
 {% endif %}
 
 - If 'multiple', ensure the correct answers are distinct but related to the concept.
@@ -193,7 +197,8 @@ async def generate_question(
     question_type: str,
     question_type_mode: str,
     num_correct_answers: int,
-    institution: Optional[str]
+    institution: Optional[str],
+    is_computer_science: bool
 ) -> QuestionWithAnswer:
     """Generate a question and its correct answers for a specific concept and question type using an LLM."""
     pass  # Implementation handled by the decorator
@@ -203,6 +208,8 @@ async def generate_question(
     output="distractors",
     response_model=Distractors,
     prompt_template="""
+You are an expert on the topic of '{{ topic }}'. {% if institution %}You are a professor at {{ institution }}.{% endif %}
+
 For the question: '{{ question }}' with correct answers: {{ correct_answers }}, generate {{ num_distractors }} plausible distractors that reflect common misunderstandings or errors related to the concept '{{ current_concept }}' within the topic '{{ topic }}'. Ensure they are believable but incorrect, and distinct from all correct answers. Also, ensure the distractors are concise and mutually exclusive, avoiding overlap or confusion with the correct answers.
 """,
     max_tokens=1000
@@ -213,7 +220,8 @@ async def generate_distractors(
     num_distractors: int,
     topic: str,
     current_concept: str,
-    model: str
+    model: str,
+    institution: Optional[str]
 ) -> Distractors:
     """Generate distractors for the question using an LLM."""
     pass  # Implementation handled by the decorator
@@ -284,6 +292,8 @@ async def prepare_explanation_inputs(mcq_item: MCQItem) -> dict:
     output="explanation",
     response_model=Explanation,
     prompt_template="""
+You are an expert on the topic of '{{ topic }}'. {% if institution %}You are a professor at {{ institution }}.{% endif %}
+
 Here is a multiple-choice question: '{{ question }}'
 
 Options:
@@ -300,7 +310,9 @@ async def generate_explanation(
     formatted_options: str,
     correct_letters: str,
     correct_options: str,
-    model: str
+    model: str,
+    topic: str,
+    institution: Optional[str]
 ) -> Explanation:
     """Generate an explanation for the MCQ using an LLM."""
     pass  # Implementation handled by the decorator
@@ -451,7 +463,8 @@ def create_mcq_workflow() -> Workflow:
         "question_type": lambda ctx: ctx["question_types"][ctx["current_index"]],
         "question_type_mode": lambda ctx: ctx["answer_modes"][ctx["current_index"]],
         "num_correct_answers": lambda ctx: 1 if ctx["answer_modes"][ctx["current_index"]] == "single" else 2,
-        "institution": "institution"
+        "institution": "institution",
+        "is_computer_science": "is_computer_science"
     }
     wf.node_input_mappings["generate_distractors"] = {
         "question": lambda ctx: ctx["question_with_answer"].question,
@@ -459,7 +472,8 @@ def create_mcq_workflow() -> Workflow:
         "num_distractors": lambda ctx: ctx["num_options"] - len(ctx["question_with_answer"].correct_answers),
         "topic": "topic",
         "current_concept": lambda ctx: ctx["key_concepts"][ctx["current_concept_index"]],
-        "model": "model"
+        "model": "model",
+        "institution": "institution"
     }
     wf.node_input_mappings["create_mcq_item"] = {
         "question_with_answer": "question_with_answer",
@@ -475,7 +489,9 @@ def create_mcq_workflow() -> Workflow:
         "formatted_options": "formatted_options",
         "correct_letters": "correct_letters",
         "correct_options": "correct_options",
-        "model": "model"
+        "model": "model",
+        "topic": "topic",
+        "institution": "institution"
     }
     wf.node_input_mappings["set_explanation"] = {
         "mcq_item": "mcq_item",
@@ -562,7 +578,8 @@ def generate(
     deep_understanding: float = typer.Option(0.3, help="Proportion of deep understanding questions (0.0 to 1.0)"),
     single: float = typer.Option(0.5, help="Proportion of single correct answer questions (0.0 to 1.0)"),
     multiple: float = typer.Option(0.5, help="Proportion of multiple correct answer questions (0.0 to 1.0)"),
-    institution: Optional[str] = typer.Option(None, help="Institution style: cambridge, oxford, ucl")
+    institution: Optional[str] = typer.Option(None, help="Institution style (e.g., cambridge, oxford, ucl)"),
+    is_computer_science: bool = typer.Option(False, help="Indicate if the topic is related to computer science or programming")
 ):
     """Generate MCQs and save them to the specified directory. Enters interactive mode if parameters are omitted."""
     try:
@@ -650,6 +667,10 @@ def generate(
                 default="",
                 show_default=False
             ).strip() or None
+            is_computer_science = typer.confirm(
+                "Is the topic related to computer science or programming?",
+                default=is_computer_science
+            )
 
         # Validate question type proportions
         total_qtype_proportion = memorization + comprehension + deep_understanding
@@ -682,7 +703,8 @@ def generate(
                 "single": single,
                 "multiple": multiple
             },
-            institution=institution
+            institution=institution,
+            is_computer_science=is_computer_science
         )
 
         # Run the workflow
