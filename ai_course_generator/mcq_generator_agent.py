@@ -40,6 +40,10 @@ class MCQRequest(BaseModel):
     output_formats: List[str] = Field(default=["json"], description="Formats to save the MCQs (e.g., json, csv, md)")
     model_name: str = Field("gemini/gemini-2.0-flash", description="LLM model to use")
     batch_size: int = Field(5, description="Batch size (currently unused, set for future optimization)")
+    question_type_distribution: dict = Field(
+        default={"memorization": 0.3, "comprehension": 0.4, "deep_understanding": 0.3},
+        description="Distribution of question types (proportions must sum to 1): memorization, comprehension, deep_understanding"
+    )
 
 class KeyConcepts(BaseModel):
     """Model for key concepts extracted from a topic."""
@@ -61,10 +65,19 @@ class MCQItem(BaseModel):
     correct_answer: int  # 1-based index
     explanation: str = ""  # Populated with detailed explanation
     key_concept: str = Field("", description="The key concept this question relates to")
+    question_type: str = Field("", description="Type of question: memorization, comprehension, deep_understanding")
 
 class Explanation(BaseModel):
     """Model for the explanation of an MCQ item."""
     explanation: str
+
+# === Helper Function ===
+def assign_question_types(num_questions: int, distribution: dict) -> List[str]:
+    """Assign question types based on the given distribution."""
+    types = list(distribution.keys())
+    probs = list(distribution.values())
+    assignments = random.choices(types, weights=probs, k=num_questions)
+    return assignments
 
 # === Workflow Nodes ===
 @Nodes.define(output="request")
@@ -79,6 +92,12 @@ async def validate_input(request: MCQRequest) -> MCQRequest:
         raise ValueError("Number of options must be at least 2")
     if not request.output_formats:
         raise ValueError("At least one output format must be specified")
+    total_proportion = sum(request.question_type_distribution.values())
+    if abs(total_proportion - 1.0) > 0.01:
+        raise ValueError("Question type proportions must sum to 1.0")
+    valid_types = {"memorization", "comprehension", "deep_understanding"}
+    if set(request.question_type_distribution.keys()) != valid_types:
+        raise ValueError(f"Question types must be {valid_types}")
     return request
 
 @Nodes.structured_llm_node(
@@ -96,7 +115,7 @@ async def extract_key_concepts(topic: str, difficulty: str, model: str) -> KeyCo
 
 @Nodes.define(output=None)
 async def initialize_mcq_generation(request: MCQRequest, key_concepts: KeyConcepts) -> dict:
-    """Initialize the context for MCQ generation with key concepts."""
+    """Initialize the context for MCQ generation with key concepts and question types."""
     logger.info("Initializing MCQ generation")
     num_questions = request.num_questions
     concepts = key_concepts.concepts
@@ -104,6 +123,7 @@ async def initialize_mcq_generation(request: MCQRequest, key_concepts: KeyConcep
     questions_per_concept = [num_questions // len(concepts)] * len(concepts)
     for i in range(num_questions % len(concepts)):
         questions_per_concept[i] += 1
+    question_types = assign_question_types(num_questions, request.question_type_distribution)
     return {
         "topic": request.topic,
         "difficulty": request.difficulty,
@@ -116,6 +136,7 @@ async def initialize_mcq_generation(request: MCQRequest, key_concepts: KeyConcep
         "target_directory": request.target_directory,
         "key_concepts": concepts,
         "questions_per_concept": questions_per_concept,
+        "question_types": question_types,  # Added question types
         "current_concept_index": 0,
         "progress_task": None  # Placeholder for progress bar task ID
     }
@@ -125,12 +146,16 @@ async def initialize_mcq_generation(request: MCQRequest, key_concepts: KeyConcep
     output="question_with_answer",
     response_model=QuestionWithAnswer,
     prompt_template="""
-Generate a multiple-choice question on the specific concept '{{ current_concept }}' within the topic '{{ topic }}' at the {{ difficulty }} level. Provide the question and the correct answer.
+Generate a multiple-choice question of type '{{ question_type }}' on the specific concept '{{ current_concept }}' within the topic '{{ topic }}' at the {{ difficulty }} level. Provide the question and the correct answer.
+
+- For 'memorization', create a question that tests recall of facts, definitions, or specific details.
+- For 'comprehension', create a question that tests understanding, such as explaining concepts or identifying main ideas.
+- For 'deep_understanding', create a scenario-based question that requires applying knowledge, analyzing situations, or evaluating options.
 """,
     max_tokens=1000
 )
-async def generate_question(topic: str, difficulty: str, model: str, current_concept: str) -> QuestionWithAnswer:
-    """Generate a question and its correct answer for a specific concept using an LLM."""
+async def generate_question(topic: str, difficulty: str, model: str, current_concept: str, question_type: str) -> QuestionWithAnswer:
+    """Generate a question and its correct answer for a specific concept and question type using an LLM."""
     pass  # Implementation handled by the decorator
 
 @Nodes.structured_llm_node(
@@ -147,8 +172,8 @@ async def generate_distractors(question: str, correct_answer: str, num_distracto
     pass  # Implementation handled by the decorator
 
 @Nodes.define(output="mcq_item")
-async def create_mcq_item(question_with_answer: QuestionWithAnswer, distractors: Distractors, current_concept: str) -> MCQItem:
-    """Create an MCQ item by combining the question, correct answer, distractors, and key concept."""
+async def create_mcq_item(question_with_answer: QuestionWithAnswer, distractors: Distractors, current_concept: str, question_type: str) -> MCQItem:
+    """Create an MCQ item by combining the question, correct answer, distractors, key concept, and question type."""
     logger.debug(f"Creating MCQ item for question: {question_with_answer.question}")
     options = [question_with_answer.correct_answer] + distractors.distractors
     random.shuffle(options)
@@ -157,7 +182,8 @@ async def create_mcq_item(question_with_answer: QuestionWithAnswer, distractors:
         question=question_with_answer.question,
         options=options,
         correct_answer=correct_index,
-        key_concept=current_concept
+        key_concept=current_concept,
+        question_type=question_type  # Added question type
     )
 
 @Nodes.define(output="mcq_item")
@@ -203,7 +229,6 @@ Provide a detailed explanation (at least 100 words) for why this is the correct 
 )
 async def generate_explanation(question: str, formatted_options: str, correct_letter: str, correct_option: str, model: str) -> Explanation:
     """Generate an explanation for the MCQ using an LLM."""
-    # Log the rendered prompt for debugging
     rendered_prompt = f"""
 Here is a multiple-choice question: '{question}'
 
@@ -247,10 +272,8 @@ async def save_mcqs(mcq_items: List[MCQItem], output_formats: List[str], target_
             with open(file_path, "w", encoding="utf-8") as f:
                 json.dump([item.dict() for item in mcq_items], f, indent=2)
         elif fmt == "csv":
-            # TODO: Implement CSV saving logic
             logger.warning(f"CSV format not implemented yet: {file_path}")
         elif fmt == "md":
-            # TODO: Implement Markdown saving logic
             logger.warning(f"Markdown format not implemented yet: {file_path}")
         else:
             logger.warning(f"Unsupported format: {fmt}")
@@ -304,7 +327,8 @@ def create_mcq_workflow() -> Workflow:
         "topic": "topic",
         "difficulty": "difficulty",
         "model": "model",
-        "current_concept": lambda ctx: ctx["key_concepts"][ctx["current_concept_index"]]
+        "current_concept": lambda ctx: ctx["key_concepts"][ctx["current_concept_index"]],
+        "question_type": lambda ctx: ctx["question_types"][ctx["current_index"]]
     }
     wf.node_input_mappings["generate_distractors"] = {
         "question": lambda ctx: ctx["question_with_answer"].question,
@@ -316,7 +340,8 @@ def create_mcq_workflow() -> Workflow:
     wf.node_input_mappings["create_mcq_item"] = {
         "question_with_answer": "question_with_answer",
         "distractors": "distractors",
-        "current_concept": lambda ctx: ctx["key_concepts"][ctx["current_concept_index"]]
+        "current_concept": lambda ctx: ctx["key_concepts"][ctx["current_concept_index"]],
+        "question_type": lambda ctx: ctx["question_types"][ctx["current_index"]]
     }
     wf.node_input_mappings["validate_mcq_item"] = {"mcq_item": "mcq_item"}
     wf.node_input_mappings["prepare_explanation_inputs"] = {"mcq_item": "mcq_item"}
@@ -353,11 +378,10 @@ async def mcq_stream_observer(event: WorkflowEvent):
     index = event.context.get("current_index", 0)
     
     if event.node_name == "initialize_mcq_generation":
-        # Initialize progress bar when workflow starts
         with Progress() as progress:
             task = progress.add_task("[yellow]Generating MCQs", total=total)
-            event.context["progress"] = progress  # Store progress object
-            event.context["progress_task"] = task  # Store task ID
+            event.context["progress"] = progress
+            event.context["progress_task"] = task
     
     elif event.node_name == "generate_question":
         concept = event.context["key_concepts"][event.context["current_concept_index"]]
@@ -399,7 +423,10 @@ def generate(
     target_directory: str = typer.Option("./mcqs", help="Directory to save output files"),
     output_formats: List[str] = typer.Option(["json"], help="Output formats (e.g., json, csv, md)"),
     model_name: str = typer.Option("gemini/gemini-2.0-flash", help="LLM model name"),
-    batch_size: int = typer.Option(5, help="Batch size (for future use)")
+    batch_size: int = typer.Option(5, help="Batch size (for future use)"),
+    memorization: float = typer.Option(0.3, help="Proportion of memorization questions (0.0 to 1.0)"),
+    comprehension: float = typer.Option(0.4, help="Proportion of comprehension questions (0.0 to 1.0)"),
+    deep_understanding: float = typer.Option(0.3, help="Proportion of deep understanding questions (0.0 to 1.0)")
 ):
     """Generate MCQs and save them to the specified directory. Enters interactive mode if parameters are omitted."""
     try:
@@ -452,6 +479,30 @@ def generate(
                 default=batch_size,
                 show_default=True
             )
+            memorization = typer.prompt(
+                "Enter the proportion of memorization questions (0.0 to 1.0)",
+                type=float,
+                default=memorization,
+                show_default=True
+            )
+            comprehension = typer.prompt(
+                "Enter the proportion of comprehension questions (0.0 to 1.0)",
+                type=float,
+                default=comprehension,
+                show_default=True
+            )
+            deep_understanding = typer.prompt(
+                "Enter the proportion of deep understanding questions (0.0 to 1.0)",
+                type=float,
+                default=deep_understanding,
+                show_default=True
+            )
+
+        # Validate question type proportions
+        total_proportion = memorization + comprehension + deep_understanding
+        if abs(total_proportion - 1.0) > 0.01:
+            console.print("[red]Error: Question type proportions must sum to 1.0[/red]")
+            raise ValueError("Question type proportions must sum to 1.0")
 
         # Create the MCQRequest object
         request = MCQRequest(
@@ -462,7 +513,12 @@ def generate(
             target_directory=target_directory,
             output_formats=output_formats,
             model_name=model_name,
-            batch_size=batch_size
+            batch_size=batch_size,
+            question_type_distribution={
+                "memorization": memorization,
+                "comprehension": comprehension,
+                "deep_understanding": deep_understanding
+            }
         )
 
         # Run the workflow
