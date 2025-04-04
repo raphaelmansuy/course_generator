@@ -1,0 +1,57 @@
+[
+  {
+    "question": "Which instruction is used to return from a function in MIPS assembly?",
+    "options": [
+      "jal label",
+      "jr $ra",
+      "addi $sp, $sp, 4",
+      "lw $ra, offset($sp)"
+    ],
+    "correct_answer": 2,
+    "explanation": "The correct answer is B. jr $ra. Here's why:\n\nB. jr $ra (jump register $ra): This is the standard instruction used to return from a function in MIPS. When a function is called using `jal` (jump and link), the address of the instruction following the `jal` is stored in the return address register ($ra). The `jr $ra` instruction then jumps to the address stored in $ra, effectively returning to the caller function.\n\nA. jal label (jump and link): This instruction is used to call a function, not return from one. It jumps to the specified label (the function's starting address) and simultaneously stores the return address in $ra.\n\nC. addi $sp, $sp, 4 (add immediate to stack pointer): This instruction modifies the stack pointer ($sp). It's typically used to allocate or deallocate space on the stack, often when passing arguments or storing local variables. While stack adjustments are often part of function calls and returns, this specific instruction doesn't directly cause the return.\n\nD. lw $ra, offset($sp) (load word into $ra): This instruction loads a word from memory (at the address calculated by adding `offset` to the value in $sp) into the $ra register. This might be used as part of a function's return sequence if the return address was previously saved on the stack, but it's not the fundamental return instruction itself. The `jr $ra` instruction is still needed to actually jump to the return address after it's loaded back into $ra."
+  },
+  {
+    "question": "In MIPS assembly, which of the following is the correct way to implement a loop that iterates through an array of words, summing the values until a negative number is encountered, and then storing the sum in register $t0? Assume $t1 holds the base address of the array, and $t2 holds the number of elements in the array.\n\nOption A: \n\tloop:\n\tlw $t3, 0($t1)\n\tbltz $t3, end\n\tadd $t0, $t0, $t3\n\taddi $t1, $t1, 4\n\tsub $t2, $t2, 1\n\tbnez $t2, loop\n\tend:\n\tsw $t0, sum_addr\n\nOption B: \n\tloop:\n\tlw $t3, 0($t1)\n\tblez $t3, end\n\tadd $t0, $t0, $t3\n\taddi $t1, $t1, 4\n\taddi $t2, $t2, -1\n\tbne $t2, loop\n\tend:\n\tsw $t0, sum_addr\n\nOption C: \n\tloop:\n\tlw $t3, 0($t1)\n\tbltz $t3, end\n\tadd $t0, $t0, $t3\n\taddi $t1, $t1, 4\n\tbnez $t3, loop\n\tend:\n\tsw $t0, sum_addr\n\nOption D: \n\tloop:\n\tlw $t3, 0($t1)\n\tbltz $t3, end\n\tadd $t0, $t0, $t3\n\taddi $t1, $t1, 4\n\tj loop\n\tend:\n\tsw $t0, sum_addr",
+    "options": [
+      "Option C",
+      "Option B",
+      "Option A",
+      "Option D"
+    ],
+    "correct_answer": 1,
+    "explanation": "Option A is correct because it accurately implements the loop logic as described in the question. The loop correctly loads a word from the array, checks if it's negative, adds it to the sum, increments the array pointer, decrements the element counter, and continues looping until either a negative number is encountered or all elements have been processed. Option B is incorrect because it uses 'blez $t3, end', which would terminate the loop if the current element is zero or negative, not just negative as the problem specifies. Also, 'addi $t2, $t2, -1' is correct, but 'bne $t2, loop' is incorrect because the loop should continue if $t2 is not zero, but this instruction checks if $t2 is not equal to the address of 'loop', which is always true. Option C is incorrect because 'bnez $t3, loop' creates an infinite loop if $t3 is not zero, regardless of the element count in $t2. It does not correctly decrement or utilize $t2 to control loop termination. Option D is incorrect because 'j loop' creates an infinite loop, ignoring the element count in $t2 and never giving an opportunity to terminate correctly after encountering a negative value. The loop will continue indefinitely, and the sum will never be stored at 'sum_addr' after a negative value is found. It's also missing the decrement of the counter which would be required for proper looping through an array with a set number of elements. Only option A correctly implements all required steps of the loop and the termination condition based on both a negative number and the count of elements to sum."
+  },
+  {
+    "question": "What is a hazard in the context of MIPS assembly, especially concerning UCL University exams?",
+    "options": [
+      "A syntax error.",
+      "A type of register.",
+      "An addressing mode.",
+      "A pipeline stall."
+    ],
+    "correct_answer": 4,
+    "explanation": "Option D, 'A pipeline stall,' is the correct answer. In MIPS assembly, a hazard is a condition that prevents the next instruction in the instruction stream from executing during its designated clock cycle. This often manifests as a pipeline stall. Pipeline stalls are introduced to resolve data dependencies (when an instruction needs the result of a previous instruction that hasn't completed yet), control dependencies (due to branches), or structural hazards (when two instructions need the same resource). Options A, B, and C are incorrect because they do not represent hazards. Option A, 'A syntax error,' is an error in the code's structure, preventing assembly, but not a hazard during execution. Option B, 'A type of register,' refers to storage locations within the CPU, unrelated to pipeline stalls. Option C, 'An addressing mode,' is a way to specify the memory location of an operand, and while incorrect addressing can cause errors, it is not a hazard in itself. Hazards specifically disrupt the smooth flow of instructions through the pipeline, causing stalls to maintain correct execution. Therefore, only option D accurately describes a hazard in the context of MIPS assembly and UCL University exams, where understanding pipeline behavior is crucial. "
+  },
+  {
+    "question": "In MIPS assembly, which of the following instructions is commonly used to load the address of a label into a register?\nA) la\nB) lw\nC) move\nD) addi",
+    "options": [
+      "A",
+      "addi",
+      "move",
+      "lw"
+    ],
+    "correct_answer": 1,
+    "explanation": "The correct answer is A) la. The instruction `la` (load address) is specifically designed in MIPS assembly to load the memory address of a label (which represents a variable or a function) into a register. For example, `la $t0, my_variable` would load the address of `my_variable` into register `$t0`.  B) `lw` (load word) is used to load the *value* stored at a particular memory address into a register, not the address itself. C) `move` copies the value from one register to another. It does not interact with memory addresses directly. D) `addi` (add immediate) adds an immediate value (a constant) to the value in a register and stores the result in another register. It's used for arithmetic operations, not for loading addresses. Therefore, only `la` serves the purpose of loading an address into a register."
+  },
+  {
+    "question": "In MIPS assembly, which of the following is the correct way to load the address of a label 'my_label' into register $t0?\n\nA) la $t0, my_label\nB) lw $t0, my_label\nC) move $t0, my_label\nD) addi $t0, $zero, my_label",
+    "options": [
+      "move $t0, my_label",
+      "lw $t0, my_label",
+      "addi $t0, $zero, my_label",
+      "A"
+    ],
+    "correct_answer": 4,
+    "explanation": "The correct answer is D, which corresponds to option A: 'la $t0, my_label'. The instruction 'la' (load address) is a pseudo-instruction in MIPS assembly that loads the address of the label 'my_label' into the register $t0. This is the standard and correct way to load an address. \n\nOption B, 'lw $t0, my_label', is incorrect because 'lw' (load word) loads the *value* stored at the memory location 'my_label' into register $t0, not the address of 'my_label' itself. \n\nOption C, 'move $t0, my_label', is incorrect because 'move' typically moves the value from one register to another. It is not designed to load the address of a label. In some assemblers, this might be interpreted as attempting to move the *value* of 'my_label' (treated as a constant) into $t0, but this is not the intended purpose of loading an address. Also, 'move' is often a pseudo-instruction that expands into an 'add' instruction.\n\nOption A (the text), 'move $t0, my_label' is the same as option C and therefore incorrect for the reasons described above. Option D (the option), is the correct one because it points to option A (the text), 'la $t0, my_label'.\n\nOption D is correct because it indicates that option A is the correct answer. The other options are incorrect because they either load the value at the address (lw) or attempt to move the label's value (move), rather than loading the address itself into the register. "
+  }
+]
