@@ -48,6 +48,7 @@ class MCQRequest(BaseModel):
         default={"single": 1.0, "multiple": 0.0},
         description="Distribution of single vs multiple correct answer questions (proportions must sum to 1)"
     )
+    institution: Optional[str] = Field(None, description="Optional institution style: cambridge, oxford, ucl")
 
 class KeyConcepts(BaseModel):
     """Model for key concepts extracted from a topic."""
@@ -109,6 +110,8 @@ async def validate_input(request: MCQRequest) -> MCQRequest:
     valid_modes = {"single", "multiple"}
     if set(request.correct_answer_mode_distribution.keys()) != valid_modes:
         raise ValueError(f"Correct answer modes must be {valid_modes}")
+    if request.institution and request.institution not in ["cambridge", "oxford", "ucl"]:
+        raise ValueError("Invalid institution. Choose from: cambridge, oxford, ucl")
     return request
 
 @Nodes.structured_llm_node(
@@ -116,7 +119,7 @@ async def validate_input(request: MCQRequest) -> MCQRequest:
     output="key_concepts",
     response_model=KeyConcepts,
     prompt_template="""
-Given the topic '{{ topic }}', identify 5-10 key concepts that are essential for understanding it at the {{ difficulty }} level. Provide only the list of concepts, no explanations.
+Given the topic '{{ topic }}', identify 5-10 key concepts that are essential for understanding it at the {{ difficulty }} level. For advanced difficulty, focus on complex, university-level concepts requiring deep understanding. Provide only the list of concepts, no explanations.
 """,
     max_tokens=500
 )
@@ -153,7 +156,8 @@ async def initialize_mcq_generation(request: MCQRequest, key_concepts: KeyConcep
         "current_concept_index": 0,
         "progress_task": None,  # Placeholder for progress bar task ID
         "question_type_distribution": request.question_type_distribution,
-        "correct_answer_mode_distribution": request.correct_answer_mode_distribution
+        "correct_answer_mode_distribution": request.correct_answer_mode_distribution,
+        "institution": request.institution
     }
 
 @Nodes.structured_llm_node(
@@ -164,13 +168,33 @@ async def initialize_mcq_generation(request: MCQRequest, key_concepts: KeyConcep
 Generate a multiple-choice question of type '{{ question_type }}' on the specific concept '{{ current_concept }}' within the topic '{{ topic }}' at the {{ difficulty }} level. The question should have {{ question_type_mode }} correct answer(s). Provide the question and a list of {{ num_correct_answers }} correct answers.
 
 - For 'memorization', create a question that tests recall of facts, definitions, or specific details.
-- For 'comprehension', create a question that tests understanding, such as explaining concepts or identifying main ideas.
-- For 'deep_understanding', create a scenario-based question that requires applying knowledge, analyzing situations, or evaluating options.
+- For 'comprehension', create a question that tests understanding by requiring the student to interpret, explain, or identify the main ideas related to the concept, rather than just recalling facts.
+- For 'deep_understanding', create a question that requires higher-order thinking, such as applying the concept to a new situation, analyzing its implications, evaluating different approaches, or synthesizing information from multiple sources. The question should be challenging and reflect the rigor expected at institutions like Cambridge, Oxford, or UCL. Where appropriate, incorporate real-world scenarios, case studies, or data interpretation (e.g., graphs, tables) to add complexity.
+
+{% if institution == 'cambridge' %}
+Ensure the question requires precise mathematical reasoning or calculations where appropriate.
+{% elif institution == 'oxford' %}
+Design a thought-provoking question that explores nuanced aspects of the concept, encouraging deep discussion.
+{% elif institution == 'ucl' %}
+Incorporate research-oriented elements, such as interpreting experimental data or referencing contemporary issues in the topic.
+{% endif %}
+
 - If 'multiple', ensure the correct answers are distinct but related to the concept.
+- For questions with multiple correct answers, ensure the question stem clearly indicates to 'select all that apply' or similar.
+- Ensure the question is clear, unambiguous, and provides all necessary information without extraneous details. Use precise, academic language suitable for university students.
 """,
     max_tokens=1000
 )
-async def generate_question(topic: str, difficulty: str, model: str, current_concept: str, question_type: str, question_type_mode: str, num_correct_answers: int) -> QuestionWithAnswer:
+async def generate_question(
+    topic: str,
+    difficulty: str,
+    model: str,
+    current_concept: str,
+    question_type: str,
+    question_type_mode: str,
+    num_correct_answers: int,
+    institution: Optional[str]
+) -> QuestionWithAnswer:
     """Generate a question and its correct answers for a specific concept and question type using an LLM."""
     pass  # Implementation handled by the decorator
 
@@ -179,21 +203,35 @@ async def generate_question(topic: str, difficulty: str, model: str, current_con
     output="distractors",
     response_model=Distractors,
     prompt_template="""
-For the question: '{{ question }}' with correct answers: {{ correct_answers }}, generate {{ num_distractors }} plausible distractors related to '{{ topic }}'. Ensure distractors are distinct from all correct answers.
+For the question: '{{ question }}' with correct answers: {{ correct_answers }}, generate {{ num_distractors }} plausible distractors that reflect common misunderstandings or errors related to the concept '{{ current_concept }}' within the topic '{{ topic }}'. Ensure they are believable but incorrect, and distinct from all correct answers. Also, ensure the distractors are concise and mutually exclusive, avoiding overlap or confusion with the correct answers.
 """,
     max_tokens=1000
 )
-async def generate_distractors(question: str, correct_answers: List[str], num_distractors: int, topic: str, model: str) -> Distractors:
+async def generate_distractors(
+    question: str,
+    correct_answers: List[str],
+    num_distractors: int,
+    topic: str,
+    current_concept: str,
+    model: str
+) -> Distractors:
     """Generate distractors for the question using an LLM."""
     pass  # Implementation handled by the decorator
 
 @Nodes.define(output="mcq_item")
-async def create_mcq_item(question_with_answer: QuestionWithAnswer, distractors: Distractors, current_concept: str, question_type: str, question_type_mode: str) -> MCQItem:
+async def create_mcq_item(
+    question_with_answer: QuestionWithAnswer,
+    distractors: Distractors,
+    current_concept: str,
+    question_type: str,
+    question_type_mode: str
+) -> MCQItem:
     """Create an MCQ item by combining the question, correct answers, distractors, key concept, and question type."""
     logger.debug(f"Creating MCQ item for question: {question_with_answer.question}")
     options = question_with_answer.correct_answers + distractors.distractors
     random.shuffle(options)
     correct_indices = [options.index(ans) + 1 for ans in question_with_answer.correct_answers]  # 1-based indices
+    logger.debug(f"Options: {options}, Correct indices: {correct_indices}")
     return MCQItem(
         question=question_with_answer.question,
         options=options,
@@ -209,20 +247,32 @@ async def validate_mcq_item(mcq_item: MCQItem) -> MCQItem:
     logger.debug(f"Validating MCQ item: {mcq_item.question}")
     if len(set(mcq_item.options)) != len(mcq_item.options):
         raise ValueError(f"Duplicate options in MCQ item: {mcq_item.question}")
+    if not mcq_item.options:
+        raise ValueError(f"No options provided for MCQ item: {mcq_item.question}")
+    max_index = len(mcq_item.options)
     for idx in mcq_item.correct_answers:
-        if idx < 1 or idx > len(mcq_item.options):
-            raise ValueError(f"Invalid correct answer index {idx} for: {mcq_item.question}")
+        if idx < 1 or idx > max_index:
+            raise ValueError(f"Invalid correct answer index {idx} (max {max_index}) for: {mcq_item.question}")
+    logger.debug(f"Validated MCQ item: {mcq_item}")
     return mcq_item
 
 @Nodes.define(output=None)
 async def prepare_explanation_inputs(mcq_item: MCQItem) -> dict:
     """Prepare inputs for generating the explanation."""
+    logger.debug(f"Preparing explanation inputs for: {mcq_item.question}")
     letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']  # Support up to 10 options
+    if not mcq_item.options or not mcq_item.correct_answers:
+        raise ValueError(f"Invalid MCQ item: options={mcq_item.options}, correct_answers={mcq_item.correct_answers}")
     correct_indices = [idx - 1 for idx in mcq_item.correct_answers]  # Convert to 0-based indices
-    correct_letters = ", ".join([letters[idx] for idx in correct_indices])
-    correct_options = ", ".join([mcq_item.options[idx] for idx in correct_indices])
+    # Safety check for index bounds
+    valid_indices = [i for i in correct_indices if 0 <= i < len(mcq_item.options)]
+    if len(valid_indices) != len(correct_indices):
+        logger.error(f"Correct indices out of range: {correct_indices}, options length: {len(mcq_item.options)}")
+        raise ValueError(f"Correct indices {correct_indices} out of range for options {mcq_item.options}")
+    correct_letters = ", ".join([letters[idx] for idx in valid_indices])
+    correct_options = ", ".join([mcq_item.options[idx] for idx in valid_indices])
     formatted_options = "\n".join([f"{letters[i]}. {opt}" for i, opt in enumerate(mcq_item.options)])
-    logger.debug(f"Prepared explanation inputs for '{mcq_item.question}': correct_letters={correct_letters}, correct_options={correct_options}")
+    logger.debug(f"Prepared: correct_letters={correct_letters}, correct_options={correct_options}")
     return {
         "formatted_options": formatted_options,
         "correct_letters": correct_letters,
@@ -241,11 +291,17 @@ Options:
 
 The correct answers are: {{ correct_letters }} ({{ correct_options }}).
 
-Provide a detailed explanation (at least 100 words) for why these are the correct answers and why each of the other options is incorrect. Use the actual option letters (e.g., A, B, C) and their text in your explanation. Do not include placeholders like '{correct_letters}' or '{explanation}' in your response—use the provided values directly.
+Provide a detailed explanation (at least 100 words) suitable for university-level students, explaining why the correct answers are right and why each distractor is incorrect, referencing specific concepts or common misconceptions. Use the actual option letters (e.g., A, B, C) and their text in your explanation. Do not include placeholders like '{correct_letters}' or '{explanation}' in your response—use the provided values directly.
 """,
     max_tokens=1000
 )
-async def generate_explanation(question: str, formatted_options: str, correct_letters: str, correct_options: str, model: str) -> Explanation:
+async def generate_explanation(
+    question: str,
+    formatted_options: str,
+    correct_letters: str,
+    correct_options: str,
+    model: str
+) -> Explanation:
     """Generate an explanation for the MCQ using an LLM."""
     pass  # Implementation handled by the decorator
 
@@ -279,7 +335,8 @@ async def save_mcqs(
     num_options: int,
     model_name: str,
     question_type_distribution: dict,
-    correct_answer_mode_distribution: dict
+    correct_answer_mode_distribution: dict,
+    institution: Optional[str]
 ) -> None:
     """Save the MCQ items to files in the specified formats with metadata."""
     logger.info(f"Saving {len(mcq_items)} MCQs to {target_directory}")
@@ -293,7 +350,8 @@ async def save_mcqs(
         "num_options": num_options,
         "model_name": model_name,
         "question_type_distribution": question_type_distribution,
-        "correct_answer_mode_distribution": correct_answer_mode_distribution
+        "correct_answer_mode_distribution": correct_answer_mode_distribution,
+        "institution": institution
     }
 
     for fmt in output_formats:
@@ -313,6 +371,8 @@ async def save_mcqs(
                 f.write(f"- **Number of Questions**: {num_questions}\n")
                 f.write(f"- **Number of Options per Question**: {num_options}\n")
                 f.write(f"- **Model Name**: {model_name}\n")
+                if institution:
+                    f.write(f"- **Institution Style**: {institution.capitalize()}\n")
                 f.write("- **Question Type Distribution**:\n")
                 for qtype, prop in question_type_distribution.items():
                     f.write(f"  - {qtype.capitalize()}: {prop * 100:.0f}%\n")
@@ -390,13 +450,15 @@ def create_mcq_workflow() -> Workflow:
         "current_concept": lambda ctx: ctx["key_concepts"][ctx["current_concept_index"]],
         "question_type": lambda ctx: ctx["question_types"][ctx["current_index"]],
         "question_type_mode": lambda ctx: ctx["answer_modes"][ctx["current_index"]],
-        "num_correct_answers": lambda ctx: 1 if ctx["answer_modes"][ctx["current_index"]] == "single" else 2
+        "num_correct_answers": lambda ctx: 1 if ctx["answer_modes"][ctx["current_index"]] == "single" else 2,
+        "institution": "institution"
     }
     wf.node_input_mappings["generate_distractors"] = {
         "question": lambda ctx: ctx["question_with_answer"].question,
         "correct_answers": lambda ctx: ctx["question_with_answer"].correct_answers,
         "num_distractors": lambda ctx: ctx["num_options"] - len(ctx["question_with_answer"].correct_answers),
         "topic": "topic",
+        "current_concept": lambda ctx: ctx["key_concepts"][ctx["current_concept_index"]],
         "model": "model"
     }
     wf.node_input_mappings["create_mcq_item"] = {
@@ -434,7 +496,8 @@ def create_mcq_workflow() -> Workflow:
         "num_options": "num_options",
         "model_name": "model",
         "question_type_distribution": "question_type_distribution",
-        "correct_answer_mode_distribution": "correct_answer_mode_distribution"
+        "correct_answer_mode_distribution": "correct_answer_mode_distribution",
+        "institution": "institution"
     }
     
     logger.debug("Workflow nodes registered: %s", wf._nodes.keys() if hasattr(wf, '_nodes') else "Unknown")
@@ -498,7 +561,8 @@ def generate(
     comprehension: float = typer.Option(0.4, help="Proportion of comprehension questions (0.0 to 1.0)"),
     deep_understanding: float = typer.Option(0.3, help="Proportion of deep understanding questions (0.0 to 1.0)"),
     single: float = typer.Option(0.5, help="Proportion of single correct answer questions (0.0 to 1.0)"),
-    multiple: float = typer.Option(0.5, help="Proportion of multiple correct answer questions (0.0 to 1.0)")
+    multiple: float = typer.Option(0.5, help="Proportion of multiple correct answer questions (0.0 to 1.0)"),
+    institution: Optional[str] = typer.Option(None, help="Institution style: cambridge, oxford, ucl")
 ):
     """Generate MCQs and save them to the specified directory. Enters interactive mode if parameters are omitted."""
     try:
@@ -581,6 +645,11 @@ def generate(
                 default=multiple,
                 show_default=True
             )
+            institution = typer.prompt(
+                "Enter the institution style (cambridge, oxford, ucl, or leave blank for none)",
+                default="",
+                show_default=False
+            ).strip() or None
 
         # Validate question type proportions
         total_qtype_proportion = memorization + comprehension + deep_understanding
@@ -612,7 +681,8 @@ def generate(
             correct_answer_mode_distribution={
                 "single": single,
                 "multiple": multiple
-            }
+            },
+            institution=institution
         )
 
         # Run the workflow
