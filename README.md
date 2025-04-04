@@ -14,6 +14,7 @@ An intelligent CLI tool for generating structured educational content using AI m
   - [Direct Command Usage](#direct-command-usage)
 - [Configuration Reference](#configuration-reference)
 - [Examples](#examples)
+- [Technical Documentation](#technical-documentation)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -24,6 +25,7 @@ An intelligent CLI tool for generating structured educational content using AI m
 ✔ **Model Flexibility** - Supports multiple AI models including Gemini  
 ✔ **User-Friendly CLI** - Interactive prompts or direct command options  
 ✔ **Structured Content** - Automatically generates chapters and outlines  
+✔ **Advanced Workflows** - Powered by QuantaLogic Flow engine ([Technical Details](TECHNICAL_README.md))
 
 ## Quick Start
 
@@ -118,6 +120,13 @@ python -m ai_course_generator.generate_course \
   --words-by-chapter 2000 \
   --model-name "gemini/gemini-2.0-pro"
 ```
+
+## Technical Documentation
+For in-depth technical information about the architecture and implementation, see our [Technical Documentation](TECHNICAL_README.md) which covers:
+- Workflow engine design
+- AI integration patterns
+- Content generation pipeline
+- Performance characteristics
 
 ## Contributing
 
