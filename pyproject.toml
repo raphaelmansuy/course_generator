@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ai-course-generator"
-version = "0.2.0"
+version = "0.3.0"
 description = "An AI-powered course generation tool that creates comprehensive educational content using advanced language models"
 authors = ["Raphaël MANSUY <raphael.mansuy@gmail.com>"]
 readme = "README.md"
