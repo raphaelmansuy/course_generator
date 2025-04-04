@@ -105,20 +105,55 @@ async def load_template(prompt_file: str, context: Dict[str, Any]) -> str:
 # Observer for streaming title, outline, and chapters
 async def content_stream_observer(event: WorkflowEvent):
     """Observer to stream title, outline, and chapter content as they are generated."""
+    from rich.progress import Progress, BarColumn, TextColumn
+    from rich.console import Console
+    from rich.panel import Panel
+    from rich.text import Text
+    
+    console = Console()
+    
     if event.event_type == WorkflowEventType.NODE_COMPLETED and event.result is not None:
         if event.node_name == "generate_title":
-            print("\n=== Course Title Generated ===\n")
-            print(event.result)
-            print("\n" + "="*30 + "\n")
+            console.print(Panel(
+                Text(f" Course Title Generated", style="bold green"),
+                title="Progress Update",
+                subtitle=f"Generating course: {event.result}",
+                border_style="blue"
+            ))
         elif event.node_name == "generate_outline":
-            print("\n=== Course Outline Generated ===\n")
-            print(event.result)
-            print("\n" + "="*30 + "\n")
+            progress = Progress(
+                TextColumn("[progress.description]{task.description}"),
+                BarColumn(),
+                TextColumn("[progress.percentage]{task.percentage:>3.0f}%")
+            )
+            with progress:
+                task = progress.add_task("[cyan]Generating Course Outline...", total=1)
+                progress.update(task, advance=1)
+                
+            console.print(Panel(
+                Text(f" Course Outline Generated", style="bold green"),
+                border_style="blue"
+            ))
         elif event.node_name == "generate_chapter":
             chapter_num = event.context["completed_chapters"] + 1
-            print(f"\n=== Chapter {chapter_num} Generated ===\n")
-            print(event.result)
-            print("\n" + "="*30 + "\n")
+            total_chapters = event.context["number_of_chapters"]
+            
+            progress = Progress(
+                TextColumn("[progress.description]{task.description}"),
+                BarColumn(),
+                TextColumn("[progress.percentage]{task.percentage:>3.0f}%")
+            )
+            with progress:
+                task = progress.add_task(
+                    f"[cyan]Generating Chapter {chapter_num}/{total_chapters}...", 
+                    total=total_chapters
+                )
+                progress.update(task, completed=chapter_num)
+                
+            console.print(Panel(
+                Text(f" Chapter {chapter_num} Generated", style="bold green"),
+                border_style="blue"
+            ))
 
 # Node definitions
 @Nodes.define(output="validation_result")
