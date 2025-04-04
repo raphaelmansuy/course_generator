@@ -429,9 +429,12 @@
       <div id="explanation" class="mt-4 p-4 bg-blue-50 rounded-lg hidden slide-up"></div>
     </div>
     
-    <div class="flex justify-between mt-6">
-      <button id="previous" class="btn btn-secondary" disabled aria-label="Previous question">◀ Back</button>
-      <button id="next" class="btn btn-primary" disabled aria-label="Next question">Continue ▶</button>
+    <div class="flex justify-between mt-8">
+      <button id="previous" class="btn btn-secondary" disabled aria-label="Previous question">◀ Previous</button>
+      <div class="flex gap-2">
+        <button id="skip" class="btn btn-secondary" aria-label="Skip question">Skip</button>
+        <button id="next" class="btn btn-primary" disabled aria-label="Next question">Continue ▶</button>
+      </div>
     </div>
   </div>
 
@@ -799,6 +802,16 @@
     document.getElementById('previous').addEventListener('click', () => {
       currentQuestion--;
       displayQuestion();
+    });
+
+    // Event listener for the "Skip" button
+    document.getElementById('skip').addEventListener('click', () => {
+      currentQuestion++;
+      if (currentQuestion < mcqsData.mcqs.length) {
+        displayQuestion();
+      } else {
+        showResults();
+      }
     });
 
     // Event listener for the "Next" button
