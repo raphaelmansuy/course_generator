@@ -136,9 +136,10 @@ async def initialize_mcq_generation(request: MCQRequest, key_concepts: KeyConcep
         "target_directory": request.target_directory,
         "key_concepts": concepts,
         "questions_per_concept": questions_per_concept,
-        "question_types": question_types,  # Added question types
+        "question_types": question_types,
         "current_concept_index": 0,
-        "progress_task": None  # Placeholder for progress bar task ID
+        "progress_task": None,  # Placeholder for progress bar task ID
+        "question_type_distribution": request.question_type_distribution  # Added for metadata
     }
 
 @Nodes.structured_llm_node(
@@ -183,7 +184,7 @@ async def create_mcq_item(question_with_answer: QuestionWithAnswer, distractors:
         options=options,
         correct_answer=correct_index,
         key_concept=current_concept,
-        question_type=question_type  # Added question type
+        question_type=question_type
     )
 
 @Nodes.define(output="mcq_item")
@@ -262,19 +263,66 @@ async def increment_index(current_index: int) -> int:
     return current_index + 1
 
 @Nodes.define(output="saved_mcqs")
-async def save_mcqs(mcq_items: List[MCQItem], output_formats: List[str], target_directory: str) -> None:
-    """Save the MCQ items to files in the specified formats."""
+async def save_mcqs(
+    mcq_items: List[MCQItem],
+    output_formats: List[str],
+    target_directory: str,
+    topic: str,
+    difficulty: str,
+    num_questions: int,
+    num_options: int,
+    model_name: str,
+    question_type_distribution: dict
+) -> None:
+    """Save the MCQ items to files in the specified formats with metadata."""
     logger.info(f"Saving {len(mcq_items)} MCQs to {target_directory}")
     os.makedirs(target_directory, exist_ok=True)
+
+    # Define metadata dictionary
+    metadata = {
+        "topic": topic,
+        "difficulty": difficulty,
+        "num_questions": num_questions,
+        "num_options": num_options,
+        "model_name": model_name,
+        "question_type_distribution": question_type_distribution
+    }
+
     for fmt in output_formats:
         file_path = os.path.join(target_directory, f"mcqs.{fmt}")
         if fmt == "json":
             with open(file_path, "w", encoding="utf-8") as f:
-                json.dump([item.dict() for item in mcq_items], f, indent=2)
+                json.dump({
+                    "metadata": metadata,
+                    "mcqs": [item.dict() for item in mcq_items]
+                }, f, indent=2)
+        elif fmt == "md":
+            with open(file_path, "w", encoding="utf-8") as f:
+                # Write metadata section
+                f.write("# MCQ Generation Metadata\n\n")
+                f.write(f"- **Topic**: {topic}\n")
+                f.write(f"- **Difficulty**: {difficulty}\n")
+                f.write(f"- **Number of Questions**: {num_questions}\n")
+                f.write(f"- **Number of Options per Question**: {num_options}\n")
+                f.write(f"- **Model Name**: {model_name}\n")
+                f.write("- **Question Type Distribution**:\n")
+                for qtype, prop in question_type_distribution.items():
+                    f.write(f"  - {qtype.capitalize()}: {prop * 100:.0f}%\n")
+                f.write("\n---\n\n")
+
+                # Write MCQs
+                f.write("# Multiple Choice Questions\n\n")
+                for idx, item in enumerate(mcq_items, 1):
+                    f.write(f"{idx}. **Question**: {item.question}\n\n")
+                    for opt_idx, opt in enumerate(item.options):
+                        f.write(f"   - {chr(65 + opt_idx)}. {opt}\n")
+                    correct_letter = chr(65 + item.correct_answer - 1)
+                    f.write(f"\n   **Correct Answer**: {correct_letter}\n")
+                    f.write(f"   **Explanation**: {item.explanation}\n")
+                    f.write(f"   **Key Concept**: {item.key_concept}\n")
+                    f.write(f"   **Question Type**: {item.question_type}\n\n")
         elif fmt == "csv":
             logger.warning(f"CSV format not implemented yet: {file_path}")
-        elif fmt == "md":
-            logger.warning(f"Markdown format not implemented yet: {file_path}")
         else:
             logger.warning(f"Unsupported format: {fmt}")
 
@@ -364,7 +412,13 @@ def create_mcq_workflow() -> Workflow:
     wf.node_input_mappings["save_mcqs"] = {
         "mcq_items": "mcq_items",
         "output_formats": "output_formats",
-        "target_directory": "target_directory"
+        "target_directory": "target_directory",
+        "topic": "topic",
+        "difficulty": "difficulty",
+        "num_questions": "num_questions",
+        "num_options": "num_options",
+        "model_name": "model",
+        "question_type_distribution": "question_type_distribution"
     }
     
     logger.debug("Workflow nodes registered: %s", wf._nodes.keys() if hasattr(wf, '_nodes') else "Unknown")

@@ -1,57 +1,67 @@
 [
   {
-    "question": "Which instruction is used to return from a function in MIPS assembly?",
+    "question": "Which MIPS register is hardwired to the value 0?",
     "options": [
-      "jal label",
-      "jr $ra",
-      "addi $sp, $sp, 4",
-      "lw $ra, offset($sp)"
+      "sp",
+      "x0",
+      "at",
+      "v0"
     ],
     "correct_answer": 2,
-    "explanation": "The correct answer is B. jr $ra. Here's why:\n\nB. jr $ra (jump register $ra): This is the standard instruction used to return from a function in MIPS. When a function is called using `jal` (jump and link), the address of the instruction following the `jal` is stored in the return address register ($ra). The `jr $ra` instruction then jumps to the address stored in $ra, effectively returning to the caller function.\n\nA. jal label (jump and link): This instruction is used to call a function, not return from one. It jumps to the specified label (the function's starting address) and simultaneously stores the return address in $ra.\n\nC. addi $sp, $sp, 4 (add immediate to stack pointer): This instruction modifies the stack pointer ($sp). It's typically used to allocate or deallocate space on the stack, often when passing arguments or storing local variables. While stack adjustments are often part of function calls and returns, this specific instruction doesn't directly cause the return.\n\nD. lw $ra, offset($sp) (load word into $ra): This instruction loads a word from memory (at the address calculated by adding `offset` to the value in $sp) into the $ra register. This might be used as part of a function's return sequence if the return address was previously saved on the stack, but it's not the fundamental return instruction itself. The `jr $ra` instruction is still needed to actually jump to the return address after it's loaded back into $ra."
+    "explanation": "The correct answer is B. x0. In MIPS architecture, register x0 is specifically hardwired to the value 0. This means that regardless of what operation is performed, reading from x0 will always return 0. It's commonly used in instructions where a zero value is needed without modifying other registers. A. sp (stack pointer) is used to point to the top of the stack in memory, facilitating function calls and local variable management; it is not hardwired to zero. C. at (assembler temporary) is a register reserved for the assembler to use during assembly; it is also not hardwired to zero and should not be used by user programs. D. v0 is used to store the return value of a function call; it is also not hardwired to zero and its value changes depending on the function's execution and return value. Therefore, only x0 is guaranteed to always hold the value 0, making option B the correct answer. ",
+    "key_concept": "Registers",
+    "question_type": "memorization"
   },
   {
-    "question": "In MIPS assembly, which of the following is the correct way to implement a loop that iterates through an array of words, summing the values until a negative number is encountered, and then storing the sum in register $t0? Assume $t1 holds the base address of the array, and $t2 holds the number of elements in the array.\n\nOption A: \n\tloop:\n\tlw $t3, 0($t1)\n\tbltz $t3, end\n\tadd $t0, $t0, $t3\n\taddi $t1, $t1, 4\n\tsub $t2, $t2, 1\n\tbnez $t2, loop\n\tend:\n\tsw $t0, sum_addr\n\nOption B: \n\tloop:\n\tlw $t3, 0($t1)\n\tblez $t3, end\n\tadd $t0, $t0, $t3\n\taddi $t1, $t1, 4\n\taddi $t2, $t2, -1\n\tbne $t2, loop\n\tend:\n\tsw $t0, sum_addr\n\nOption C: \n\tloop:\n\tlw $t3, 0($t1)\n\tbltz $t3, end\n\tadd $t0, $t0, $t3\n\taddi $t1, $t1, 4\n\tbnez $t3, loop\n\tend:\n\tsw $t0, sum_addr\n\nOption D: \n\tloop:\n\tlw $t3, 0($t1)\n\tbltz $t3, end\n\tadd $t0, $t0, $t3\n\taddi $t1, $t1, 4\n\tj loop\n\tend:\n\tsw $t0, sum_addr",
+    "question": "Consider a MIPS processor with a 5-stage pipeline (IF, ID, EX, MEM, WB) and standard data forwarding. A compiler is optimizing code for this processor. Which of the following statements is most accurate regarding instruction scheduling within a basic block?",
     "options": [
-      "Option C",
-      "Option B",
-      "Option A",
-      "Option D"
+      "The compiler will only schedule instructions based on memory access patterns, ignoring other types of dependencies.",
+      "The compiler can reorder instructions freely without considering data dependencies as the hardware handles all hazards.",
+      "The compiler might reorder instructions within the basic block to minimize pipeline stalls, but must respect data dependencies.",
+      "The compiler will always schedule instructions in the order they appear in the source code to maintain program correctness."
+    ],
+    "correct_answer": 3,
+    "explanation": "Here's a detailed explanation of why option C is the correct answer and why the other options are incorrect: \n\n**C. The compiler might reorder instructions within the basic block to minimize pipeline stalls, but must respect data dependencies.** This is the most accurate statement. Instruction scheduling is a compiler optimization technique that aims to reorder instructions within a basic block to reduce pipeline stalls and improve performance. However, the compiler *must* respect data dependencies. Data dependencies occur when one instruction depends on the result of a previous instruction. Reordering instructions without considering these dependencies would lead to incorrect program execution.\n\nLet's examine why the other options are incorrect:\n\n**A. The compiler will only schedule instructions based on memory access patterns, ignoring other types of dependencies.** This is incorrect because instruction scheduling considers *all* types of dependencies (data, control, and structural), not just memory access patterns. Ignoring other dependencies would lead to incorrect code.\n\n**B. The compiler can reorder instructions freely without considering data dependencies as the hardware handles all hazards.** This is incorrect. While data forwarding in the hardware can mitigate some data hazards, it cannot resolve all of them. Some stalls might still be necessary, and more importantly, the compiler *must* ensure that the reordering does not violate fundamental data dependencies that forwarding cannot resolve. Unrestrained reordering would lead to incorrect results.\n\n**D. The compiler will always schedule instructions in the order they appear in the source code to maintain program correctness.** This is incorrect because it describes a situation with no optimization. While executing instructions in the original order guarantees correctness (assuming the original code is correct), it doesn't take advantage of potential performance improvements through instruction scheduling. A compiler's purpose is to improve performance while maintaining correctness. Therefore, this option doesn't reflect the behavior of an optimizing compiler.",
+    "key_concept": "Instruction Set Architecture (ISA)",
+    "question_type": "deep_understanding"
+  },
+  {
+    "question": "In MIPS assembly, which memory segment is typically used for storing global variables and static data structures?",
+    "options": [
+      "Text segment",
+      "Data segment",
+      "Heap segment",
+      "Stack segment"
+    ],
+    "correct_answer": 2,
+    "explanation": "The correct answer is B. Data segment. Here's why:\n\nB. Data segment: This segment is specifically designed to store global variables, static variables, and other pre-initialized data that persists throughout the program's execution. These variables have a fixed memory location and are accessible from anywhere in the code.\n\nA. Text segment: The text segment, also known as the code segment, is used to store the program's executable instructions. It contains the compiled code that the processor executes. It is not used for storing variables.\n\nC. Heap segment: The heap is a region of memory used for dynamic memory allocation during program execution. Variables allocated on the heap are created and destroyed at runtime using functions like `malloc` and `free` (or their equivalents). It is not used for storing global variables.\n\nD. Stack segment: The stack is a region of memory used for storing local variables, function call information (like return addresses and parameters), and temporary data associated with function calls. The stack grows and shrinks as functions are called and return. It is not used for storing global variables.\n\nTherefore, the data segment is the appropriate choice for storing global variables and static data structures in MIPS assembly.",
+    "key_concept": "Memory Organization",
+    "question_type": "comprehension"
+  },
+  {
+    "question": "Which addressing mode uses the register itself as the operand?",
+    "options": [
+      "Immediate Addressing",
+      "Indirect Addressing",
+      "Register Direct",
+      "Displacement Addressing"
+    ],
+    "correct_answer": 3,
+    "explanation": "The correct answer is C. Register Direct. In register direct addressing, the register itself holds the operand. The instruction specifies the register's name, and the CPU directly accesses the data stored in that register. For example, an instruction might be 'Move R1, R2', which copies the content of register R2 into register R1. Here, both R1 and R2 are directly accessed.  A. Immediate Addressing is incorrect because in immediate addressing, the operand is a constant value included directly in the instruction. B. Indirect Addressing is incorrect because in indirect addressing, the instruction specifies a register that contains the *address* of the operand, not the operand itself. The CPU must first access the register to get the address, and then access that memory location to get the operand. D. Displacement Addressing is incorrect because it involves adding a constant offset (displacement) to the contents of a register to calculate the memory address of the operand. It's a combination of direct and indirect addressing, but the register doesn't directly hold the operand; the register plus displacement holds the address of operand. Therefore, only Register Direct addressing uses the register itself as the operand",
+    "key_concept": "Addressing Modes",
+    "question_type": "memorization"
+  },
+  {
+    "question": "Which MIPS assembly instruction is used to initiate a procedure call, saving the return address in $ra?",
+    "options": [
+      "jal (jump and link)",
+      "j (jump)",
+      "beq (branch if equal)",
+      "jr (jump register)"
     ],
     "correct_answer": 1,
-    "explanation": "Option A is correct because it accurately implements the loop logic as described in the question. The loop correctly loads a word from the array, checks if it's negative, adds it to the sum, increments the array pointer, decrements the element counter, and continues looping until either a negative number is encountered or all elements have been processed. Option B is incorrect because it uses 'blez $t3, end', which would terminate the loop if the current element is zero or negative, not just negative as the problem specifies. Also, 'addi $t2, $t2, -1' is correct, but 'bne $t2, loop' is incorrect because the loop should continue if $t2 is not zero, but this instruction checks if $t2 is not equal to the address of 'loop', which is always true. Option C is incorrect because 'bnez $t3, loop' creates an infinite loop if $t3 is not zero, regardless of the element count in $t2. It does not correctly decrement or utilize $t2 to control loop termination. Option D is incorrect because 'j loop' creates an infinite loop, ignoring the element count in $t2 and never giving an opportunity to terminate correctly after encountering a negative value. The loop will continue indefinitely, and the sum will never be stored at 'sum_addr' after a negative value is found. It's also missing the decrement of the counter which would be required for proper looping through an array with a set number of elements. Only option A correctly implements all required steps of the loop and the termination condition based on both a negative number and the count of elements to sum."
-  },
-  {
-    "question": "What is a hazard in the context of MIPS assembly, especially concerning UCL University exams?",
-    "options": [
-      "A syntax error.",
-      "A type of register.",
-      "An addressing mode.",
-      "A pipeline stall."
-    ],
-    "correct_answer": 4,
-    "explanation": "Option D, 'A pipeline stall,' is the correct answer. In MIPS assembly, a hazard is a condition that prevents the next instruction in the instruction stream from executing during its designated clock cycle. This often manifests as a pipeline stall. Pipeline stalls are introduced to resolve data dependencies (when an instruction needs the result of a previous instruction that hasn't completed yet), control dependencies (due to branches), or structural hazards (when two instructions need the same resource). Options A, B, and C are incorrect because they do not represent hazards. Option A, 'A syntax error,' is an error in the code's structure, preventing assembly, but not a hazard during execution. Option B, 'A type of register,' refers to storage locations within the CPU, unrelated to pipeline stalls. Option C, 'An addressing mode,' is a way to specify the memory location of an operand, and while incorrect addressing can cause errors, it is not a hazard in itself. Hazards specifically disrupt the smooth flow of instructions through the pipeline, causing stalls to maintain correct execution. Therefore, only option D accurately describes a hazard in the context of MIPS assembly and UCL University exams, where understanding pipeline behavior is crucial. "
-  },
-  {
-    "question": "In MIPS assembly, which of the following instructions is commonly used to load the address of a label into a register?\nA) la\nB) lw\nC) move\nD) addi",
-    "options": [
-      "A",
-      "addi",
-      "move",
-      "lw"
-    ],
-    "correct_answer": 1,
-    "explanation": "The correct answer is A) la. The instruction `la` (load address) is specifically designed in MIPS assembly to load the memory address of a label (which represents a variable or a function) into a register. For example, `la $t0, my_variable` would load the address of `my_variable` into register `$t0`.  B) `lw` (load word) is used to load the *value* stored at a particular memory address into a register, not the address itself. C) `move` copies the value from one register to another. It does not interact with memory addresses directly. D) `addi` (add immediate) adds an immediate value (a constant) to the value in a register and stores the result in another register. It's used for arithmetic operations, not for loading addresses. Therefore, only `la` serves the purpose of loading an address into a register."
-  },
-  {
-    "question": "In MIPS assembly, which of the following is the correct way to load the address of a label 'my_label' into register $t0?\n\nA) la $t0, my_label\nB) lw $t0, my_label\nC) move $t0, my_label\nD) addi $t0, $zero, my_label",
-    "options": [
-      "move $t0, my_label",
-      "lw $t0, my_label",
-      "addi $t0, $zero, my_label",
-      "A"
-    ],
-    "correct_answer": 4,
-    "explanation": "The correct answer is D, which corresponds to option A: 'la $t0, my_label'. The instruction 'la' (load address) is a pseudo-instruction in MIPS assembly that loads the address of the label 'my_label' into the register $t0. This is the standard and correct way to load an address. \n\nOption B, 'lw $t0, my_label', is incorrect because 'lw' (load word) loads the *value* stored at the memory location 'my_label' into register $t0, not the address of 'my_label' itself. \n\nOption C, 'move $t0, my_label', is incorrect because 'move' typically moves the value from one register to another. It is not designed to load the address of a label. In some assemblers, this might be interpreted as attempting to move the *value* of 'my_label' (treated as a constant) into $t0, but this is not the intended purpose of loading an address. Also, 'move' is often a pseudo-instruction that expands into an 'add' instruction.\n\nOption A (the text), 'move $t0, my_label' is the same as option C and therefore incorrect for the reasons described above. Option D (the option), is the correct one because it points to option A (the text), 'la $t0, my_label'.\n\nOption D is correct because it indicates that option A is the correct answer. The other options are incorrect because they either load the value at the address (lw) or attempt to move the label's value (move), rather than loading the address itself into the register. "
+    "explanation": "The correct answer is A. jal (jump and link). The jal instruction is specifically designed to initiate a procedure call in MIPS assembly. It saves the address of the next instruction (the return address) in the register $ra (register 31) and then jumps to the target address specified in the instruction. This allows the program to execute the procedure and then return to the instruction following the jal instruction. B. j (jump) is incorrect because the j instruction performs a simple jump to a specified address without saving any return address. It is used for unconditional jumps within the program but not for procedure calls where a return is needed. C. beq (branch if equal) is incorrect as it is a conditional branch instruction. It compares two registers and branches to a specified address only if the registers are equal. It does not save any return address and is not used for procedure calls. D. jr (jump register) is incorrect because while it does jump to an address, the address is stored in a register. It's typically used to return from a procedure by jumping to the address stored in $ra, but it doesn't save the return address itself. The jal instruction is the only one that both jumps to the procedure and saves the return address in $ra. ",
+    "key_concept": "Procedure Calls",
+    "question_type": "memorization"
   }
 ]
