@@ -25,65 +25,37 @@ console = Console()
 
 @app.command()
 def generate(
-    subject: str = typer.Option(None, help="Course subject"),
-    number_of_chapters: int = typer.Option(None, help="Number of chapters"),
-    level: str = typer.Option(None, help="Difficulty level (beginner/intermediate/advanced)"),
-    words_by_chapter: int = typer.Option(None, help="Number of words per chapter"),
-    target_directory: str = typer.Option(None, help="Target directory for course output"),
-    pdf_generation: bool = typer.Option(True, help="Generate PDF version of the course"),
-    docx_generation: bool = typer.Option(True, help="Generate DOCX version of the course"),
-    epub_generation: bool = typer.Option(False, help="Generate EPUB version of the course"),
-    model_name: str = typer.Option("gemini/gemini-2.0-flash", help="AI model to use for generation"),
-    interactive: bool = typer.Option(False, "--interactive", "-i", help="Run in interactive mode")
+    subject: str = typer.Option(None, "--subject", "-s", help="Course subject"),
+    number_of_chapters: int = typer.Option(None, "--number-of-chapters", "-n", help="Number of chapters"),
+    level: str = typer.Option(None, "--level", "-l", help="Difficulty level (beginner/intermediate/advanced)"),
+    words_by_chapter: int = typer.Option(None, "--words-by-chapter", "-w", help="Target word count per chapter"),
+    target_directory: str = typer.Option(None, "--target-directory", "-o", help="Output directory path"),
+    pdf_generation: bool = typer.Option(True, "--pdf/--no-pdf", help="Generate PDF output"),
+    docx_generation: bool = typer.Option(True, "--docx/--no-docx", help="Generate DOCX output"),
+    epub_generation: bool = typer.Option(False, "--epub/--no-epub", help="Generate EPUB output"),
+    model_name: str = typer.Option("gemini/gemini-2.0-flash", "--model-name", "-m", help="AI model to use"),
+    interactive: bool = typer.Option(False, "--interactive", "-i", help="Interactive mode"),
 ):
     """Generate a course with the given parameters."""
-    # If no required parameters are provided, force interactive mode
-    if all(param is None for param in [subject, number_of_chapters, level, words_by_chapter, target_directory]):
+    
+    # Check if any required parameter is missing and switch to interactive mode
+    if not interactive and any(param is None for param in [subject, number_of_chapters, level, words_by_chapter, target_directory]):
         interactive = True
-        
+        console.print("[yellow]Missing required parameters, switching to interactive mode...[/yellow]")
+
     if interactive:
-        console.print("[bold green]\nCourse Generator Interactive Mode\n[/bold green]")
+        console.print("\n[bold]Course Generator Interactive Mode[/bold]\n")
+        subject = Prompt.ask("Course Subject", default=subject or "Python Programming")
+        number_of_chapters = IntPrompt.ask("Number of Chapters", default=number_of_chapters or 5)
+        level = Prompt.ask("Difficulty Level", choices=["beginner", "intermediate", "advanced"], default=level or "intermediate")
+        words_by_chapter = IntPrompt.ask("Words per Chapter", default=words_by_chapter or 1000)
+        target_directory = Prompt.ask("Output Directory", default=target_directory or "./courses/python3")
         
-        # Get required parameters interactively
-        subject = Prompt.ask("\n[bold]Course Subject[/bold] (e.g. Python Programming)", default=subject or "Python Programming")
-        number_of_chapters = IntPrompt.ask(
-            "\n[bold]Number of Chapters[/bold]", 
-            default=number_of_chapters or 5,
-            show_default=True
-        )
-        level = Prompt.ask(
-            "\n[bold]Difficulty Level[/bold] (beginner/intermediate/advanced)",
-            choices=["beginner", "intermediate", "advanced"],
-            default=level or "intermediate"
-        )
-        words_by_chapter = IntPrompt.ask(
-            "\n[bold]Words per Chapter[/bold]",
-            default=words_by_chapter or 1000,
-            show_default=True
-        )
-        target_directory = Prompt.ask(
-            "\n[bold]Target Directory[/bold] for course files",
-            default=target_directory or "./courses/python3"
-        )
+        pdf_generation = Confirm.ask("Generate PDF version?", default=pdf_generation)
+        docx_generation = Confirm.ask("Generate DOCX version?", default=docx_generation)
+        epub_generation = Confirm.ask("Generate EPUB version?", default=epub_generation)
         
-        # Get optional parameters
-        pdf_generation = Confirm.ask(
-            "\n[bold]Generate PDF version[/bold]?",
-            default=pdf_generation
-        )
-        docx_generation = Confirm.ask(
-            "\n[bold]Generate DOCX version[/bold]?",
-            default=docx_generation
-        )
-        epub_generation = Confirm.ask(
-            "\n[bold]Generate EPUB version[/bold]?",
-            default=epub_generation
-        )
-        
-        model_name = Prompt.ask(
-            "\n[bold]AI Model[/bold] to use for generation",
-            default=model_name or "gemini/gemini-2.0-flash"
-        )
+        model_name = Prompt.ask("AI Model to use for generation", default=model_name or "gemini/gemini-2.0-flash")
         
         console.print("\n[bold]Summary of your course:[/bold]")
         console.print(f"  Subject: {subject}")

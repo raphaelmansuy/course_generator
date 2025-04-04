@@ -28,8 +28,8 @@ An intelligent CLI tool for generating structured educational content using AI m
 ## Quick Start
 
 ```bash
-# Run the course generator directly
-python ai_course_generator/generate_course.py
+# Run in interactive mode (recommended for first-time users)
+python -m ai_course_generator.generate_course --interactive
 ```
 
 ## Installation Options
@@ -50,19 +50,43 @@ pipx install git+https://github.com/raphaelmansuy/course-generator.git
 
 ### Interactive Mode
 ```bash
-python ai_course_generator/generate_course.py --interactive
+python -m ai_course_generator.generate_course --interactive
 # or
-python ai_course_generator/generate_course.py -i
+python -m ai_course_generator.generate_course -i
 ```
 The interactive mode will guide you through all configuration options with sensible defaults.
 
 ### Direct Command Usage
+
+#### Required Parameters
+
+All of these must be provided either via command line or interactive mode:
+- `--subject`: Course subject (string)
+- `--number-of-chapters`: Number of chapters (integer)
+- `--level`: Difficulty level (beginner/intermediate/advanced)
+- `--words-by-chapter`: Target word count per chapter (integer)
+- `--target-directory`: Output directory path (string)
+
+#### Complete Command Example:
 ```bash
-python ai_course_generator/generate_course.py \
-  --subject "Data Science" \
-  --level intermediate \
-  --words-by-chapter 1200 \
-  --no-epub
+python -m ai_course_generator.generate_course \
+  --subject "Python Basics" \
+  --number-of-chapters 5 \
+  --level beginner \
+  --words-by-chapter 800 \
+  --target-directory "./output_courses"
+```
+
+#### With Optional Flags:
+```bash
+python -m ai_course_generator.generate_course \
+  --subject "Advanced ML" \
+  --number-of-chapters 8 \
+  --level advanced \
+  --words-by-chapter 1500 \
+  --target-directory "./ml_courses" \
+  --no-pdf \
+  --model-name "gemini/gemini-2.0-pro"
 ```
 
 ## Configuration Reference
@@ -80,7 +104,7 @@ python ai_course_generator/generate_course.py \
 
 **1. Beginner-Friendly Course**
 ```bash
-python ai_course_generator/generate_course.py \
+python -m ai_course_generator.generate_course \
   --subject "Python Basics" \
   --level beginner \
   --words-by-chapter 600
@@ -88,7 +112,7 @@ python ai_course_generator/generate_course.py \
 
 **2. Technical Deep Dive**
 ```bash
-python ai_course_generator/generate_course.py \
+python -m ai_course_generator.generate_course \
   --subject "Advanced Kubernetes" \
   --level advanced \
   --words-by-chapter 2000 \
