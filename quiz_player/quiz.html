@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MCQ Practice</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+  <!-- JSON Input Page -->
+  <div id="inputPage" class="container mx-auto p-4">
+    <h1 class="text-2xl font-bold mb-4">Paste Your MCQ JSON</h1>
+    <textarea id="jsonInput" class="w-full h-64 p-2 border rounded" placeholder="Paste your JSON here (e.g., {'metadata': ..., 'mcqs': [...]})"></textarea>
+    <button id="submitJson" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded">Start Quiz</button>
+    <p id="errorMessage" class="mt-2 text-red-500"></p>
+  </div>
+
+  <!-- MCQ Page (Hidden Initially) -->
+  <div id="mcqPage" class="container mx-auto p-4 hidden">
+    <h1 class="text-2xl font-bold mb-4"></h1>
+    <p id="progress" class="mb-4"></p>
+    <div id="question" class="mb-4 text-lg"></div>
+    <div id="options" class="space-y-2"></div>
+    <div id="feedback" class="mt-4 text-xl font-semibold"></div>
+    <div id="explanation" class="mt-4"></div>
+    <button id="next" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded" disabled>Next</button>
+  </div>
+
+  <script>
+    let mcqsData = null;
+    let currentQuestion = 0;
+
+    // Validate JSON
+    function validateJson(data) {
+      try {
+        const json = JSON.parse(data);
+        if (!json.metadata || !json.mcqs || !Array.isArray(json.mcqs)) {
+          return false;
+        }
+        return json;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    // Handle JSON Submission
+    document.getElementById('submitJson').addEventListener('click', () => {
+      const jsonInput = document.getElementById('jsonInput').value;
+      const parsedData = validateJson(jsonInput);
+      if (parsedData) {
+        mcqsData = parsedData;
+        document.getElementById('inputPage').classList.add('hidden');
+        document.getElementById('mcqPage').classList.remove('hidden');
+        // Set the title using metadata
+        document.querySelector('#mcqPage h1').textContent = `${mcqsData.metadata.topic} - ${mcqsData.metadata.difficulty} Level`;
+        displayQuestion();
+      } else {
+        document.getElementById('errorMessage').textContent = 'Invalid JSON format. Please ensure it includes "metadata" and "mcqs" fields.';
+      }
+    });
+
+    // Function to display the current question
+    function displayQuestion() {
+      const question = mcqsData.mcqs[currentQuestion];
+      document.getElementById('progress').textContent = `Question ${currentQuestion + 1} of ${mcqsData.mcqs.length}`;
+      document.getElementById('question').textContent = question.question;
+
+      const optionsDiv = document.getElementById('options');
+      optionsDiv.innerHTML = '';
+
+      // Create option buttons
+      question.options.forEach((option, index) => {
+        const button = document.createElement('button');
+        button.textContent = `${String.fromCharCode(65 + index)}. ${option}`;
+        button.classList.add('block', 'w-full', 'text-left', 'p-2', 'border', 'rounded');
+        button.addEventListener('click', () => checkAnswer(index));
+        optionsDiv.appendChild(button);
+      });
+
+      // Reset feedback and explanation
+      document.getElementById('feedback').textContent = '';
+      document.getElementById('explanation').textContent = '';
+      document.getElementById('next').disabled = true;
+    }
+
+    // Function to check the selected answer
+    function checkAnswer(selectedIndex) {
+      const question = mcqsData.mcqs[currentQuestion];
+      const correctIndex = question.correct_answer - 1; // Convert from 1-based to 0-based index
+      const options = document.getElementById('options').children;
+
+      if (selectedIndex === correctIndex) {
+        options[selectedIndex].classList.add('bg-green-200');
+        document.getElementById('feedback').textContent = 'Correct!';
+      } else {
+        options[selectedIndex].classList.add('bg-red-200');
+        options[correctIndex].classList.add('bg-green-200');
+        document.getElementById('feedback').textContent = 'Incorrect.';
+      }
+
+      document.getElementById('explanation').textContent = question.explanation;
+
+      // Disable all option buttons after selection
+      Array.from(options).forEach(button => button.disabled = true);
+      document.getElementById('next').disabled = false;
+    }
+
+    // Event listener for the "Next" button
+    document.getElementById('next').addEventListener('click', () => {
+      currentQuestion++;
+      if (currentQuestion < mcqsData.mcqs.length) {
+        displayQuestion();
+      } else {
+        alert('You have completed all questions!');
+        // Reset to input page
+        document.getElementById('mcqPage').classList.add('hidden');
+        document.getElementById('inputPage').classList.remove('hidden');
+        currentQuestion = 0;
+        document.getElementById('jsonInput').value = ''; // Clear input
+        document.getElementById('errorMessage').textContent = '';
+      }
+    });
+  </script>
+</body>
+</html>

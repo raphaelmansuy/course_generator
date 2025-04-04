@@ -1,67 +1,81 @@
-[
-  {
-    "question": "Which MIPS register is hardwired to the value 0?",
-    "options": [
-      "sp",
-      "x0",
-      "at",
-      "v0"
-    ],
-    "correct_answer": 2,
-    "explanation": "The correct answer is B. x0. In MIPS architecture, register x0 is specifically hardwired to the value 0. This means that regardless of what operation is performed, reading from x0 will always return 0. It's commonly used in instructions where a zero value is needed without modifying other registers. A. sp (stack pointer) is used to point to the top of the stack in memory, facilitating function calls and local variable management; it is not hardwired to zero. C. at (assembler temporary) is a register reserved for the assembler to use during assembly; it is also not hardwired to zero and should not be used by user programs. D. v0 is used to store the return value of a function call; it is also not hardwired to zero and its value changes depending on the function's execution and return value. Therefore, only x0 is guaranteed to always hold the value 0, making option B the correct answer. ",
-    "key_concept": "Registers",
-    "question_type": "memorization"
+{
+  "metadata": {
+    "topic": "MIPS Assembly",
+    "difficulty": "advanced",
+    "num_questions": 5,
+    "num_options": 4,
+    "model_name": "gemini/gemini-2.0-flash",
+    "question_type_distribution": {
+      "memorization": 0.3,
+      "comprehension": 0.4,
+      "deep_understanding": 0.3
+    }
   },
-  {
-    "question": "Consider a MIPS processor with a 5-stage pipeline (IF, ID, EX, MEM, WB) and standard data forwarding. A compiler is optimizing code for this processor. Which of the following statements is most accurate regarding instruction scheduling within a basic block?",
-    "options": [
-      "The compiler will only schedule instructions based on memory access patterns, ignoring other types of dependencies.",
-      "The compiler can reorder instructions freely without considering data dependencies as the hardware handles all hazards.",
-      "The compiler might reorder instructions within the basic block to minimize pipeline stalls, but must respect data dependencies.",
-      "The compiler will always schedule instructions in the order they appear in the source code to maintain program correctness."
-    ],
-    "correct_answer": 3,
-    "explanation": "Here's a detailed explanation of why option C is the correct answer and why the other options are incorrect: \n\n**C. The compiler might reorder instructions within the basic block to minimize pipeline stalls, but must respect data dependencies.** This is the most accurate statement. Instruction scheduling is a compiler optimization technique that aims to reorder instructions within a basic block to reduce pipeline stalls and improve performance. However, the compiler *must* respect data dependencies. Data dependencies occur when one instruction depends on the result of a previous instruction. Reordering instructions without considering these dependencies would lead to incorrect program execution.\n\nLet's examine why the other options are incorrect:\n\n**A. The compiler will only schedule instructions based on memory access patterns, ignoring other types of dependencies.** This is incorrect because instruction scheduling considers *all* types of dependencies (data, control, and structural), not just memory access patterns. Ignoring other dependencies would lead to incorrect code.\n\n**B. The compiler can reorder instructions freely without considering data dependencies as the hardware handles all hazards.** This is incorrect. While data forwarding in the hardware can mitigate some data hazards, it cannot resolve all of them. Some stalls might still be necessary, and more importantly, the compiler *must* ensure that the reordering does not violate fundamental data dependencies that forwarding cannot resolve. Unrestrained reordering would lead to incorrect results.\n\n**D. The compiler will always schedule instructions in the order they appear in the source code to maintain program correctness.** This is incorrect because it describes a situation with no optimization. While executing instructions in the original order guarantees correctness (assuming the original code is correct), it doesn't take advantage of potential performance improvements through instruction scheduling. A compiler's purpose is to improve performance while maintaining correctness. Therefore, this option doesn't reflect the behavior of an optimizing compiler.",
-    "key_concept": "Instruction Set Architecture (ISA)",
-    "question_type": "deep_understanding"
-  },
-  {
-    "question": "In MIPS assembly, which memory segment is typically used for storing global variables and static data structures?",
-    "options": [
-      "Text segment",
-      "Data segment",
-      "Heap segment",
-      "Stack segment"
-    ],
-    "correct_answer": 2,
-    "explanation": "The correct answer is B. Data segment. Here's why:\n\nB. Data segment: This segment is specifically designed to store global variables, static variables, and other pre-initialized data that persists throughout the program's execution. These variables have a fixed memory location and are accessible from anywhere in the code.\n\nA. Text segment: The text segment, also known as the code segment, is used to store the program's executable instructions. It contains the compiled code that the processor executes. It is not used for storing variables.\n\nC. Heap segment: The heap is a region of memory used for dynamic memory allocation during program execution. Variables allocated on the heap are created and destroyed at runtime using functions like `malloc` and `free` (or their equivalents). It is not used for storing global variables.\n\nD. Stack segment: The stack is a region of memory used for storing local variables, function call information (like return addresses and parameters), and temporary data associated with function calls. The stack grows and shrinks as functions are called and return. It is not used for storing global variables.\n\nTherefore, the data segment is the appropriate choice for storing global variables and static data structures in MIPS assembly.",
-    "key_concept": "Memory Organization",
-    "question_type": "comprehension"
-  },
-  {
-    "question": "Which addressing mode uses the register itself as the operand?",
-    "options": [
-      "Immediate Addressing",
-      "Indirect Addressing",
-      "Register Direct",
-      "Displacement Addressing"
-    ],
-    "correct_answer": 3,
-    "explanation": "The correct answer is C. Register Direct. In register direct addressing, the register itself holds the operand. The instruction specifies the register's name, and the CPU directly accesses the data stored in that register. For example, an instruction might be 'Move R1, R2', which copies the content of register R2 into register R1. Here, both R1 and R2 are directly accessed.  A. Immediate Addressing is incorrect because in immediate addressing, the operand is a constant value included directly in the instruction. B. Indirect Addressing is incorrect because in indirect addressing, the instruction specifies a register that contains the *address* of the operand, not the operand itself. The CPU must first access the register to get the address, and then access that memory location to get the operand. D. Displacement Addressing is incorrect because it involves adding a constant offset (displacement) to the contents of a register to calculate the memory address of the operand. It's a combination of direct and indirect addressing, but the register doesn't directly hold the operand; the register plus displacement holds the address of operand. Therefore, only Register Direct addressing uses the register itself as the operand",
-    "key_concept": "Addressing Modes",
-    "question_type": "memorization"
-  },
-  {
-    "question": "Which MIPS assembly instruction is used to initiate a procedure call, saving the return address in $ra?",
-    "options": [
-      "jal (jump and link)",
-      "j (jump)",
-      "beq (branch if equal)",
-      "jr (jump register)"
-    ],
-    "correct_answer": 1,
-    "explanation": "The correct answer is A. jal (jump and link). The jal instruction is specifically designed to initiate a procedure call in MIPS assembly. It saves the address of the next instruction (the return address) in the register $ra (register 31) and then jumps to the target address specified in the instruction. This allows the program to execute the procedure and then return to the instruction following the jal instruction. B. j (jump) is incorrect because the j instruction performs a simple jump to a specified address without saving any return address. It is used for unconditional jumps within the program but not for procedure calls where a return is needed. C. beq (branch if equal) is incorrect as it is a conditional branch instruction. It compares two registers and branches to a specified address only if the registers are equal. It does not save any return address and is not used for procedure calls. D. jr (jump register) is incorrect because while it does jump to an address, the address is stored in a register. It's typically used to return from a procedure by jumping to the address stored in $ra, but it doesn't save the return address itself. The jal instruction is the only one that both jumps to the procedure and saves the return address in $ra. ",
-    "key_concept": "Procedure Calls",
-    "question_type": "memorization"
-  }
-]
+  "mcqs": [
+    {
+      "question": "In MIPS assembly, which of the following statements best explains the advantage of using registers over memory?",
+      "options": [
+        "Registers are used for storing the operating system.",
+        "Registers allow direct access by multiple programs simultaneously.",
+        "Registers provide larger storage capacity than memory.",
+        "Registers are faster to access than memory."
+      ],
+      "correct_answer": 4,
+      "explanation": "Option D is correct because registers are small storage locations within the CPU itself, allowing for much faster data access compared to accessing memory, which is located outside the CPU. The speed difference is due to the shorter distance the data needs to travel and the simpler addressing mechanism. Now, let's examine why the other options are incorrect. Option A, 'Registers are used for storing the operating system,' is incorrect because the operating system is stored in memory, not registers. Registers are used for actively processing data and instructions. Option B, 'Registers allow direct access by multiple programs simultaneously,' is incorrect because registers are typically allocated to a single program or thread at a time. Concurrent access to registers would lead to data corruption and conflicts. Option C, 'Registers provide larger storage capacity than memory,' is incorrect because registers are much smaller in capacity compared to memory (RAM). Memory is designed to store large amounts of data, while registers are designed for speed and are therefore limited in size. Therefore, the only correct answer is D.",
+      "key_concept": "Registers",
+      "question_type": "comprehension"
+    },
+    {
+      "question": "Which of the following best describes the primary role of the Instruction Set Architecture (ISA) in computer architecture?",
+      "options": [
+        "A high-level programming language used to write operating systems",
+        "A type of memory used for storing frequently accessed data",
+        "A standard protocol for communication between networked devices",
+        "Defines the set of instructions a processor can execute"
+      ],
+      "correct_answer": 4,
+      "explanation": "The Instruction Set Architecture (ISA) is the fundamental interface between the hardware and software in a computer system. It defines the set of instructions that a processor can understand and execute. Therefore, option D, 'Defines the set of instructions a processor can execute,' is the correct answer. The ISA includes details such as the instruction formats, addressing modes, registers, and data types. It acts as an abstraction layer, allowing software to be written without needing to know the specific hardware implementation. Different processor families (e.g., x86, ARM) have different ISAs. Option A, 'A high-level programming language used to write operating systems,' is incorrect because while high-level languages are used for OS development, they are distinct from the ISA, which is a hardware-level concept. Option B, 'A type of memory used for storing frequently accessed data,' describes a cache, not the ISA. Option C, 'A standard protocol for communication between networked devices,' refers to networking protocols like TCP/IP, which are unrelated to the ISA's role in defining processor instructions. The ISA is specific to the processor's architecture, while networking protocols govern data transmission across networks.",
+      "key_concept": "Instruction Set Architecture (ISA)",
+      "question_type": "memorization"
+    },
+    {
+      "question": "In MIPS assembly, if you want to access a specific element in an array stored in memory, and you use the instruction `lw $t1, 8($t0)`, what is the role of the value '8' in this instruction?",
+      "options": [
+        "The offset is added to the base address in $t0 to access the desired memory location.",
+        "A constant value that is added to the value in register $t1.",
+        "The index of the element in the array.",
+        "The value stored at memory address 8."
+      ],
+      "correct_answer": 1,
+      "explanation": "The instruction `lw $t1, 8($t0)` in MIPS assembly is used to load a word from memory into register `$t1`. Let's break down why option A is correct and why the others are not:\n\n**A. The offset is added to the base address in $t0 to access the desired memory location.** This is the correct explanation. In this instruction, `$t0` holds the base address of the array (i.e., the memory address of the first element). The value `8` is an offset that is added to this base address to calculate the effective memory address from which the word will be loaded. So, the memory address accessed is `$t0 + 8`.\n\n**B. A constant value that is added to the value in register $t1.** This is incorrect. The value `8` is not added to the value in `$t1`. Instead, the value stored at the memory location `$t0 + 8` is loaded into `$t1`.\n\n**C. The index of the element in the array.** This is partially correct but can be misleading. While the offset is related to the index, it's not directly the index itself *unless* each element is one byte in size. In MIPS, an integer (word) typically occupies 4 bytes. If the array contains words, an offset of `8` would correspond to the *third* element (index 2), assuming the first element is at index 0, since the offset is in bytes. Therefore, it is more accurate to say it's an offset rather than the index.\n\n**D. The value stored at memory address 8.** This is incorrect. The instruction does not directly access memory address `8`. It accesses the memory address calculated by adding the value in `$t0` (the base address) and the offset `8`.\n\nTherefore, option A is the most accurate and complete explanation of the role of the value `8` in the given MIPS instruction. It correctly identifies `8` as an offset added to the base address stored in `$t0` to determine the memory location to access. ",
+      "key_concept": "Memory Addressing",
+      "question_type": "deep_understanding"
+    },
+    {
+      "question": "Which statement best describes the role of assembly directives in MIPS assembly language?",
+      "options": [
+        "Directives do not produce machine code and guide the assembler during the assembly process.",
+        "Directives are optional and do not affect the assembly process.",
+        "Directives are translated directly into executable machine code.",
+        "Directives are executed by the CPU during program runtime."
+      ],
+      "correct_answer": 1,
+      "explanation": "Option A is correct because assembly directives are instructions to the assembler itself, not instructions to be executed by the CPU at runtime. They control the assembly process, such as defining data segments, allocating memory, or specifying the starting point of the program. They do not translate into machine code. Option B is incorrect because directives are not optional; they play a crucial role in guiding the assembler and are often necessary for proper assembly. Option C is incorrect because directives are not translated into executable machine code. Instead, they instruct the assembler on how to assemble the code. Option D is incorrect because directives are not executed by the CPU during program runtime. They are only relevant during the assembly process and have no impact on the program's execution after it has been assembled and loaded into memory. Directives are essential for tasks such as defining constants, reserving memory locations, and structuring the assembly code, ensuring the assembler correctly translates the assembly code into machine code that the CPU can execute.",
+      "key_concept": "Assembly Directives",
+      "question_type": "comprehension"
+    },
+    {
+      "question": "In MIPS assembly, how is a system call typically invoked?",
+      "options": [
+        "A system call is requested by placing the appropriate code in $v0 and using the syscall instruction.",
+        "A jump to a specific memory location is performed.",
+        "An interrupt is raised, handled by the operating system.",
+        "The program counter is set to the address of the system call handler."
+      ],
+      "correct_answer": 1,
+      "explanation": "Option A is correct because in MIPS assembly, a system call is invoked by first placing the system call code (a number that identifies the specific system call) into register $v0. Then, the syscall instruction is executed. This instruction causes a trap, which transfers control to the operating system's kernel. The kernel then uses the value in $v0 to determine which system call to execute. Options B, C, and D are incorrect. Option B suggests that a jump to a specific memory location is performed. While system calls eventually involve the kernel executing code at a specific memory location, the initial invocation is not a direct jump but rather a controlled transfer of execution via the syscall instruction. Option C proposes that an interrupt is raised. While the syscall instruction does cause a trap, which is a type of interrupt, the phrasing is not precise enough regarding the crucial role of the $v0 register. Option D states that the program counter is set to the address of the system call handler. Again, while the program counter eventually points to the system call handler, this is a consequence of the syscall instruction, not the direct method of initiating the system call. The value in $v0 is essential for the OS to know *which* system call to handle.",
+      "key_concept": "System Calls",
+      "question_type": "comprehension"
+    }
+  ]
+}
