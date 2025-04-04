@@ -18,7 +18,7 @@ typer = "^0.15.2"
 rich = "^13.9.4"
 jinja2 = "^3.1.5"
 instructor = "^1.7.2"
-aiofiles = "^24.1.0"
+aiofiles = ">=24.1.0,<25.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
