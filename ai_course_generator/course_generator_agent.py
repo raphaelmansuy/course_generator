@@ -115,7 +115,7 @@ async def content_stream_observer(event: WorkflowEvent):
     if event.event_type == WorkflowEventType.NODE_COMPLETED and event.result is not None:
         if event.node_name == "generate_title":
             console.print(Panel(
-                Text(f" Course Title Generated", style="bold green"),
+                Text(" Course Title Generated", style="bold green"),
                 title="Progress Update",
                 subtitle=f"Generating course: {event.result}",
                 border_style="blue"
@@ -131,7 +131,7 @@ async def content_stream_observer(event: WorkflowEvent):
                 progress.update(task, advance=1)
                 
             console.print(Panel(
-                Text(f" Course Outline Generated", style="bold green"),
+                Text(" Course Outline Generated", style="bold green"),
                 border_style="blue"
             ))
         elif event.node_name == "generate_chapter":
