@@ -1,4 +1,4 @@
--e git+ssh://git@github.com/raphaelmansuy/course_generator.git@598d0924b3d4e8320d807a4e691e21577e163a20#egg=ai_course_generator
+-e git+https://github.com/raphaelmansuy/course_generator.git@598d0924b3d4e8320d807a4e691e21577e163a20#egg=ai_course_generator
 aiofiles==23.2.1
 aiohappyeyeballs==2.4.6
 aiohttp==3.11.13
