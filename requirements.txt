@@ -101,7 +101,7 @@ python-pptx==1.0.2
 pytz==2025.1
 PyYAML==6.0.2
 pyyaml_env_tag==0.1
-quantalogic==0.61.3
+quantalogic-flow==0.6.3
 quantalogic-pythonbox==0.8.9
 referencing==0.36.2
 regex==2024.11.6

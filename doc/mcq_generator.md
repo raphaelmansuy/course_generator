@@ -49,7 +49,7 @@ Supported formats:
 4. Quiz API format
 
 ## Dependencies
-- quantalogic
+- quantalogic-flow
 - litellm
 - pydantic
 
