@@ -81,7 +81,7 @@ The AI Course Generator is organized into core application logic, AI prompt temp
 - **Workflow Nodes** - Descriptive names matching processing steps (validate_input, generate_title)
 
 **Dependency Relationships:**
-- **Core Dependencies** - quantalogic, litellm, pydantic for core functionality
+- **Core Dependencies** - quantalogic-flow, litellm, pydantic for core functionality
 - **Document Processing** - pypandoc, rich, aiofiles for output generation
 - **Development Tools** - black, isort, ruff, pytest for code quality and testing
 - **System Dependencies** - Pandoc and LaTeX for document format conversion

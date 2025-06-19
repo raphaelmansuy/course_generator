@@ -120,7 +120,7 @@ poetry run ruff check .
 - **pyproject.toml** - Build and tool configuration
 
 **Key Dependencies:**
-- **quantalogic** - Workflow engine and node decorators
+- **quantalogic-flow** - Workflow engine and node decorators
 - **pydantic** - Data validation and settings management
 - **litellm** - Multi-provider AI model integration
 - **jinja2** - Template rendering for dynamic prompts

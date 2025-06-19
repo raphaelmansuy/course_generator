@@ -41,7 +41,7 @@ poetry run generate_course --interactive
 ## Platform Setup
 
 **Core Dependencies** (pyproject.toml:9-21):
-- `quantalogic ^0.61.3` - Workflow engine
+- `quantalogic-flow ^0.6.3` - Workflow engine
 - `litellm ^1.61.20` - AI model integration  
 - `pypandoc ^1.15` - Document conversion
 - `typer ^0.15.2` - CLI framework
