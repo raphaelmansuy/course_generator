@@ -9,9 +9,10 @@
 4. [API Reference](#api-reference)
 5. [Troubleshooting](#troubleshooting)
 6. [Contributing](#contributing)
+7. [Dependencies](#dependencies)
 
 ## Overview
-This document explains the architecture and workflow of the AI Course Generator that uses QuantaLogic Flow for content generation.
+This document explains the architecture and workflow of the AI Course Generator that uses QuantaLogic Flow (`quantalogic-flow >=0.6.3`) for content generation. The project supports multi-provider AI integration and outputs in PDF, DOCX, EPUB, and Markdown formats.
 
 ```mermaid
 graph TD
@@ -47,30 +48,28 @@ graph TD
 ## Getting Started
 ### Installation
 ```bash
+poetry install
+# or
 pip install -r requirements.txt
 ```
 
 ### Basic Usage
-```python
-from ai_course_generator import generate_course
-
-result = generate_course(
-    subject="Python Programming",
-    chapters=5,
-    level="intermediate"
-)
+```bash
+poetry run python -m ai_course_generator.generate_course --subject "Python Programming" --level intermediate --number-of-chapters 5 --words-by-chapter 500
 ```
 
 ## Architecture
 
 ### 1. Workflow Engine (QuantaLogic Flow)
 Key Features:
-- Node-based processing pipeline
+- Node-based processing pipeline (using `quantalogic-flow`)
 - Automatic retry mechanism
 - Real-time progress tracking
 
 **Example Node Definition**:
 ```python
+from quantalogic_flow.flow import Nodes
+
 @Nodes.define(output="chapter_content")
 async def generate_chapter(title, outline, chapter_num):
     """Generates chapter content with error handling"""
@@ -112,21 +111,25 @@ sequenceDiagram
 ## API Reference
 ### generate_course()
 ```python
+from ai_course_generator.generate_course import generate_course
+
 def generate_course(
     subject: str,
     chapters: int,
     level: str = "intermediate",
-    output_formats: List[str] = ["pdf", "docx"]
-) -> Dict[str, Path]:
+    output_formats: list[str] = ["pdf", "docx"],
+    target_directory: str = None,
+    model_name: str = "gemini/gemini-2.0-flash"
+) -> dict[str, str]:
     """
     Generates complete course materials
-    
     Args:
         subject: Course subject/topic
         chapters: Number of chapters to generate
         level: Difficulty level (beginner|intermediate|advanced)
-        output_formats: List of output formats
-    
+        output_formats: List of output formats (pdf, docx, epub, md)
+        target_directory: Output directory path
+        model_name: AI model to use
     Returns:
         Dictionary mapping formats to file paths
     """
@@ -138,12 +141,10 @@ def generate_course(
    ```bash
    sudo apt-get install pandoc
    ```
-
 2. **LaTeX Missing**
    ```bash
    sudo apt-get install texlive-latex-base
    ```
-
 3. **Chapter Generation Fails**
    - Check API key permissions
    - Verify network connectivity
@@ -161,7 +162,7 @@ graph LR
     classDef service fill:#26C6DA,stroke:#00ACC1
     classDef dependency fill:#FFA726,stroke:#FB8C00
     
-    A[Course Generator]:::main --> B[QuantaLogic]:::service
+    A[Course Generator]:::main --> B[QuantaLogic Flow]:::service
     A --> C[LiteLLM]:::service
     A --> D[Pandoc]:::dependency
     A --> E[LaTeX]:::dependency
@@ -170,4 +171,4 @@ graph LR
 ```
 
 **Version**: 1.0.0  
-**Last Updated**: 2025-04-04
+**Last Updated**: 2025-06-19
