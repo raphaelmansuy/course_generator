@@ -1,143 +1,36 @@
-# AI Course Generator 🚀
+<!-- Generated: 2025-06-19 00:28:38 UTC -->
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python Version](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+# AI Course Generator
 
-An intelligent CLI tool for generating structured educational content using AI models.
+AI-powered educational content creation tool using QuantaLogic Flow workflows and multi-provider AI integration. Generates structured courses in PDF, DOCX, EPUB, and Markdown formats with customizable difficulty levels and comprehensive MCQ support.
 
-## Table of Contents
-- [Key Features](#key-features)
-- [Quick Start](#quick-start)
-- [Installation Options](#installation-options)
-- [Usage Guide](#usage-guide)
-  - [Interactive Mode](#interactive-mode)
-  - [Direct Command Usage](#direct-command-usage)
-- [Configuration Reference](#configuration-reference)
-- [Examples](#examples)
-- [Technical Documentation](#technical-documentation)
-- [Contributing](#contributing)
-- [License](#license)
+## Key Entry Points
 
-## Key Features
+**Core Files:**
+- `ai_course_generator/generate_course.py` - CLI interface with Typer framework
+- `ai_course_generator/course_generator_agent.py` - Main workflow engine and AI integration  
+- `pyproject.toml` - Build configuration and dependencies
 
-✔ **Multi-format Output** - Generate courses in PDF, DOCX, and EPUB formats  
-✔ **Smart Configuration** - Customize length, difficulty, and content depth  
-✔ **Model Flexibility** - Supports multiple AI models including Gemini  
-✔ **User-Friendly CLI** - Interactive prompts or direct command options  
-✔ **Structured Content** - Automatically generates chapters and outlines  
-✔ **Advanced Workflows** - Powered by QuantaLogic Flow engine ([Technical Details](TECHNICAL_README.md))
-
-## Quick Start
+## Quick Build Commands
 
 ```bash
-# Run in interactive mode (recommended for first-time users)
-python -m ai_course_generator.generate_course --interactive
+# Install dependencies
+poetry install
+
+# Generate course
+poetry run generate_course --subject "Python" --level beginner
+
+# Alternative installation
+pip install -r requirements.txt
 ```
 
-## Installation Options
+## Documentation
 
-### Standard Installation
-```bash
-git clone https://github.com/raphaelmansuy/course-generator.git
-cd course-generator
-pip install -e .
-```
-
-### Isolated Installation (recommended)
-```bash
-pipx install git+https://github.com/raphaelmansuy/course-generator.git
-```
-
-## Usage Guide
-
-### Interactive Mode
-```bash
-python -m ai_course_generator.generate_course --interactive
-# or
-python -m ai_course_generator.generate_course -i
-```
-The interactive mode will guide you through all configuration options with sensible defaults.
-
-### Direct Command Usage
-
-#### Required Parameters
-
-All of these must be provided either via command line or interactive mode:
-- `--subject`: Course subject (string)
-- `--number-of-chapters`: Number of chapters (integer)
-- `--level`: Difficulty level (beginner/intermediate/advanced)
-- `--words-by-chapter`: Target word count per chapter (integer)
-- `--target-directory`: Output directory path (string)
-
-#### Complete Command Example:
-```bash
-python -m ai_course_generator.generate_course \
-  --subject "Python Basics" \
-  --number-of-chapters 5 \
-  --level beginner \
-  --words-by-chapter 800 \
-  --target-directory "./output_courses"
-```
-
-#### With Optional Flags:
-```bash
-python -m ai_course_generator.generate_course \
-  --subject "Advanced ML" \
-  --number-of-chapters 8 \
-  --level advanced \
-  --words-by-chapter 1500 \
-  --target-directory "./ml_courses" \
-  --no-pdf \
-  --model-name "gemini/gemini-2.0-pro"
-```
-
-## Configuration Reference
-
-| Parameter | Description | Values | Default |
-|-----------|-------------|--------|---------|
-| `--subject` | Course topic | Any string | Required |
-| `--level` | Difficulty | beginner/intermediate/advanced | intermediate |
-| `--number-of-chapters` | Course length | 1-20 | 5 |
-| `--words-by-chapter` | Content depth | 500-5000 | 1000 |
-| `--target-directory` | Output path | Valid path | ./courses/[subject] |
-| `--model-name` | AI model | Supported model name | gemini/gemini-2.0-flash |
-
-## Examples
-
-**1. Beginner-Friendly Course**
-```bash
-python -m ai_course_generator.generate_course \
-  --subject "Python Basics" \
-  --level beginner \
-  --words-by-chapter 600
-```
-
-**2. Technical Deep Dive**
-```bash
-python -m ai_course_generator.generate_course \
-  --subject "Advanced Kubernetes" \
-  --level advanced \
-  --words-by-chapter 2000 \
-  --model-name "gemini/gemini-2.0-pro"
-```
-
-## Technical Documentation
-For in-depth technical information about the architecture and implementation, see our [Technical Documentation](TECHNICAL_README.md) which covers:
-- Workflow engine design
-- AI integration patterns
-- Content generation pipeline
-- Performance characteristics
-
-## Contributing
-
-We welcome contributions! Please see our [Contribution Guidelines](CONTRIBUTING.md) for details.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## License
-
-Distributed under the MIT License. See `LICENSE` for more information.
+**LLM-Optimized Technical Reference:**
+- **[docs/project-overview.md](docs/project-overview.md)** - Project purpose, technology stack, and platform requirements
+- **[docs/architecture.md](docs/architecture.md)** - System organization, workflow components, and data flow with specific file references
+- **[docs/build-system.md](docs/build-system.md)** - Build instructions, dependencies, and platform setup for all environments
+- **[docs/development.md](docs/development.md)** - Code patterns, development workflows, and implementation examples from codebase
+- **[docs/testing.md](docs/testing.md)** - Testing approach, commands, and CI/CD integration
+- **[docs/deployment.md](docs/deployment.md)** - Packaging, distribution, and production deployment strategies
+- **[docs/files.md](docs/files.md)** - Comprehensive file catalog with descriptions and dependency relationships
